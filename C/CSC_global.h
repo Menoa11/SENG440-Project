@@ -8,7 +8,7 @@
 // RGB_to_YCC_ROUTINE
 //     1 for CSC_RGB_to_YCC_brute_force_float()
 //     2 for CSC_RGB_to_YCC_brute_force_int()
-#define RGB_to_YCC_ROUTINE 1
+#define RGB_to_YCC_ROUTINE 2
 
 // YCC_to_RGB_ROUTINE
 //     1 for CSC_YCC_to_RGB_brute_force_float()
