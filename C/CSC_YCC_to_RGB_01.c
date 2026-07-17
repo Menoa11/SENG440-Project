@@ -316,7 +316,7 @@ static void chrominance_array_upsample( void) {
   }
 
   row = (IMAGE_ROW_SIZE>>1) - 1;
-  for( col=0; row<((IMAGE_COL_SIZE>>1)-1); col+=1) {
+  for( col=0; col<((IMAGE_COL_SIZE>>1)-1); col+=1) {
     chrominance_upsample( Cb[row][col+0], Cb[row][col+1],
                           Cb[row][col+0], Cb[row][col+1],
                           &top, &left, &middle);
