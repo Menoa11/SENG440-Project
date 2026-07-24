@@ -37,15 +37,14 @@ static void chrominance_array_upsample( void);
 #if YCC_to_RGB_ROUTINE == 1
 // =======
 static inline uint8_t saturation_float( float argument) {
-  if( argument > 255.0) { // saturation
-    return( (uint8_t)255);
-  }
-  else if( argument < 0.0) {
-    return( (uint8_t)0);
-  }
-  else {
-    return( (uint8_t)argument);
-  }
+  // Branchless clamp to [0.0, 255.0].
+  // Ternaries let the compiler emit predicated moves (CSEL on
+  // AArch64, conditional MOV on ARMv5/v7) instead of a conditional
+  // branch, avoiding pipeline stalls on misprediction. Equivalent
+  // to the original if/else form; output is bit-identical.
+  argument = (argument > 255.0) ? 255.0 : argument;
+  argument = (argument < 0.0)   ? 0.0   : argument;
+  return( (uint8_t)argument);
 } // END of saturation_float()
 
 // =======
@@ -116,15 +115,15 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col) {
 #if YCC_to_RGB_ROUTINE == 2
 // =======
 static inline uint8_t saturation_int( int argument) {
-  if( argument > 255) { // saturation
-    return( (uint8_t)255);
-  }
-  else if( argument < 0) {
-    return( (uint8_t)0);
-  }
-  else {
-    return( (uint8_t)argument);
-  }
+  // Branchless clamp to [0, 255].
+  // Ternaries let the compiler emit predicated moves (CSEL on
+  // AArch64, USAT or conditional MOV on ARMv5/v7) instead of a
+  // conditional branch, avoiding pipeline stalls on misprediction.
+  // In the NEON path this scalar clamp is replaced entirely by
+  // SQXTUN (saturating narrow) as a free byproduct of packing.
+  argument = (argument > 255) ? 255 : argument;
+  argument = (argument < 0)   ? 0   : argument;
+  return( (uint8_t)argument);
 } // END of saturation_int()
 
 // =======
