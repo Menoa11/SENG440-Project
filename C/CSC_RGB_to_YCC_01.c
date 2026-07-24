@@ -22,7 +22,7 @@ static void CSC_RGB_to_YCC_brute_force_int( int row, int col);
 #endif
 
 // =======
-static uint8_t chrominance_downsample(
+static inline uint8_t chrominance_downsample(
     uint8_t C_pixel_1, uint8_t C_pixel_2,
     uint8_t C_pixel_3, uint8_t C_pixel_4);
 
@@ -205,7 +205,7 @@ static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
 #endif // RGB_to_YCC_ROUTINE == 2
 
 // =======
-static uint8_t chrominance_downsample(
+static inline uint8_t chrominance_downsample(
     uint8_t C_pixel_00, uint8_t C_pixel_01,
     uint8_t C_pixel_10, uint8_t C_pixel_11) {
 

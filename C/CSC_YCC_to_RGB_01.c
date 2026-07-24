@@ -16,16 +16,16 @@
 
 #if YCC_to_RGB_ROUTINE == 1
 // =======
-static uint8_t saturation_float( float argument);
+static inline uint8_t saturation_float( float argument);
 static void CSC_YCC_to_RGB_brute_force_float( int row, int col);
 #elif YCC_to_RGB_ROUTINE == 2
 // =======
-static uint8_t saturation_int( int argument);
+static inline uint8_t saturation_int( int argument);
 static void CSC_YCC_to_RGB_brute_force_int( int row, int col);
 #endif
 
 // =======
-static void chrominance_upsample(
+static inline void chrominance_upsample(
     uint8_t C_pixel_1, uint8_t C_pixel_2,
     uint8_t C_pixel_3, uint8_t C_pixel_4,
     uint8_t *top, uint8_t *left, uint8_t *middle);
@@ -36,7 +36,7 @@ static void chrominance_array_upsample( void);
 
 #if YCC_to_RGB_ROUTINE == 1
 // =======
-static uint8_t saturation_float( float argument) {
+static inline uint8_t saturation_float( float argument) {
   if( argument > 255.0) { // saturation
     return( (uint8_t)255);
   }
@@ -115,7 +115,7 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col) {
 
 #if YCC_to_RGB_ROUTINE == 2
 // =======
-static uint8_t saturation_int( int argument) {
+static inline uint8_t saturation_int( int argument) {
   if( argument > 255) { // saturation
     return( (uint8_t)255);
   }
@@ -256,7 +256,7 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
 #endif // YCC_to_RGB_ROUTINE == 2
 
 // =======
-static void chrominance_upsample(
+static inline void chrominance_upsample(
     uint8_t C_pixel_00, uint8_t C_pixel_01,
     uint8_t C_pixel_10, uint8_t C_pixel_11,
     uint8_t *top, uint8_t *left, uint8_t *middle) {
