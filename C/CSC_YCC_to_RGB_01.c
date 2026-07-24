@@ -8,14 +8,21 @@
 
 // private data
 
-// private prototypes
+// private prototypes / definitions
+// The routine implementations (and their saturation helpers) are
+// compiled in only for the selected YCC_to_RGB_ROUTINE, so unused
+// variants are completely absent from the object file
+// (true dead-code elimination, not just link-time).
+
+#if YCC_to_RGB_ROUTINE == 1
 // =======
 static uint8_t saturation_float( float argument);
 static void CSC_YCC_to_RGB_brute_force_float( int row, int col);
-
+#elif YCC_to_RGB_ROUTINE == 2
 // =======
 static uint8_t saturation_int( int argument);
 static void CSC_YCC_to_RGB_brute_force_int( int row, int col);
+#endif
 
 // =======
 static void chrominance_upsample(
@@ -26,6 +33,8 @@ static void chrominance_upsample(
 static void chrominance_array_upsample( void);
 
 // private definitions
+
+#if YCC_to_RGB_ROUTINE == 1
 // =======
 static uint8_t saturation_float( float argument) {
   if( argument > 255.0) { // saturation
@@ -102,7 +111,9 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col) {
                + 2.018*(Cb_temp[row+1][col+1] - 128.0);
   B[row+1][col+1] = saturation_float( B_pixel_11);
 } // END of CSC_YCC_to_RGB_brute_force_float()
+#endif // YCC_to_RGB_ROUTINE == 1
 
+#if YCC_to_RGB_ROUTINE == 2
 // =======
 static uint8_t saturation_int( int argument) {
   if( argument > 255) { // saturation
@@ -175,19 +186,19 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   luma_11 = D1 * Y_pixel_11;
 
   R_pixel_00 = luma_00 + D2 * Cr_pixel_00;
-  R_pixel_00 += (1 << (K-1)); // rounding
+  R_pixel_00 += ROUND_K; // rounding
   R_pixel_00 = R_pixel_00 >> K;
 
   R_pixel_01 = luma_01 + D2 * Cr_pixel_01;
-  R_pixel_01 += (1 << (K-1)); // rounding
+  R_pixel_01 += ROUND_K; // rounding
   R_pixel_01 = R_pixel_01 >> K;
 
   R_pixel_10 = luma_10 + D2 * Cr_pixel_10;
-  R_pixel_10 += (1 << (K-1)); // rounding
+  R_pixel_10 += ROUND_K; // rounding
   R_pixel_10 = R_pixel_10 >> K;
 
   R_pixel_11 = luma_11 + D2 * Cr_pixel_11;
-  R_pixel_11 += (1 << (K-1)); // rounding
+  R_pixel_11 += ROUND_K; // rounding
   R_pixel_11 = R_pixel_11 >> K;
 
   R[row+0][col+0] = (uint8_t)R_pixel_00;
@@ -197,22 +208,22 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
 
   G_pixel_00 = luma_00 - D3 * Cr_pixel_00
                        - D4 * Cb_pixel_00;
-  G_pixel_00 += (1 << (K-1)); // rounding
+  G_pixel_00 += ROUND_K; // rounding
   G_pixel_00 = G_pixel_00 >> K;
 
   G_pixel_01 = luma_01 - D3 * Cr_pixel_01
                        - D4 * Cb_pixel_01;
-  G_pixel_01 += (1 << (K-1)); // rounding
+  G_pixel_01 += ROUND_K; // rounding
   G_pixel_01 = G_pixel_01 >> K;
 
   G_pixel_10 = luma_10 - D3 * Cr_pixel_10
                        - D4 * Cb_pixel_10;
-  G_pixel_10 += (1 << (K-1)); // rounding
+  G_pixel_10 += ROUND_K; // rounding
   G_pixel_10 = G_pixel_10 >> K;
 
   G_pixel_11 = luma_11 - D3 * Cr_pixel_11
                        - D4 * Cb_pixel_11;
-  G_pixel_11 += (1 << (K-1)); // rounding
+  G_pixel_11 += ROUND_K; // rounding
   G_pixel_11 = G_pixel_11 >> K;
 
   G[row+0][col+0] = (uint8_t)G_pixel_00;
@@ -221,19 +232,19 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   G[row+1][col+1] = (uint8_t)G_pixel_11;
 
   B_pixel_00 = luma_00 + D5 * Cb_pixel_00;
-  B_pixel_00 += (1 << (K-1)); // rounding
+  B_pixel_00 += ROUND_K; // rounding
   B_pixel_00 = B_pixel_00 >> K;
 
   B_pixel_01 = luma_01 + D5 * Cb_pixel_01;
-  B_pixel_01 += (1 << (K-1)); // rounding
+  B_pixel_01 += ROUND_K; // rounding
   B_pixel_01 = B_pixel_01 >> K;
 
   B_pixel_10 = luma_10 + D5 * Cb_pixel_10;
-  B_pixel_10 += (1 << (K-1)); // rounding
+  B_pixel_10 += ROUND_K; // rounding
   B_pixel_10 = B_pixel_10 >> K;
 
   B_pixel_11 = luma_11 + D5 * Cb_pixel_11;
-  B_pixel_11 += (1 << (K-1)); // rounding
+  B_pixel_11 += ROUND_K; // rounding
   B_pixel_11 = B_pixel_11 >> K;
 
   B[row+0][col+0] = (uint8_t)B_pixel_00;
@@ -242,6 +253,7 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   B[row+1][col+1] = (uint8_t)B_pixel_11;
 
 } // END of CSC_YCC_to_RGB_brute_force_int()
+#endif // YCC_to_RGB_ROUTINE == 2
 
 // =======
 static void chrominance_upsample(
@@ -377,18 +389,14 @@ void CSC_YCC_to_RGB( void) {
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
     for( col=0; col<IMAGE_COL_SIZE; col+=2) {
       //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
-      switch (YCC_to_RGB_ROUTINE) {
-        case 0:
-          break;
-        case 1:
-          CSC_YCC_to_RGB_brute_force_float( row, col);
-          break;
-        case 2:
-          CSC_YCC_to_RGB_brute_force_int( row, col);
-          break;
-        default:
-          break;
-      }
+      // Preprocessor dispatch on the compile-time YCC_to_RGB_ROUTINE.
+      // No runtime switch, no branch per iteration; the unselected
+      // call site is not emitted at all.
+#if YCC_to_RGB_ROUTINE == 1
+      CSC_YCC_to_RGB_brute_force_float( row, col);
+#elif YCC_to_RGB_ROUTINE == 2
+      CSC_YCC_to_RGB_brute_force_int( row, col);
+#endif
 //      printf( "Luma_00  = %02hhx\n", Y[row+0][col+0]);
 //      printf( "Luma_01  = %02hhx\n", Y[row+0][col+1]);
 //      printf( "Luma_10  = %02hhx\n", Y[row+1][col+0]);

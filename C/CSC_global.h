@@ -2,6 +2,15 @@
 
 #define K 8 // bitwidth
 #define UNITY (1 << K)
+
+// Named constants for fixed-point arithmetic (Q8 format).
+// Used across CSC_RGB_to_YCC and CSC_YCC_to_RGB to replace
+// repeated expressions with a single named token — clearer intent,
+// and guarantees the compiler folds them at compile time.
+#define ROUND_K     (1 << (K-1))  // rounding constant added before >>K
+#define BIAS_LUMA   (16  << K)    // Y  offset (16.0 in Q8), used in RGB->YCC
+#define BIAS_CHROMA (128 << K)    // Cb/Cr offset (128.0 in Q8), used in RGB->YCC
+
 #define IMAGE_ROW_SIZE 480
 #define IMAGE_COL_SIZE 640
 
@@ -15,13 +24,13 @@
 //     2 for CSC_YCC_to_RGB_brute_force_int()
 #define YCC_to_RGB_ROUTINE 1
 
-// CHROMINANCE_DOWNSAMPLING_MODE = 
+// CHROMINANCE_DOWNSAMPLING_MODE =
 //     0 for returning zero (no chrominance)
 //     1 for discarding three pixels and keeping one
 //     2 for averaging four pixels
 #define CHROMINANCE_DOWNSAMPLING_MODE 1
 
-// CHROMINANCE_UPSAMPLING_MODE = 
+// CHROMINANCE_UPSAMPLING_MODE =
 //     0 for returning zero (no chrominance)
 //     1 for replicating one pixel into three
 //     2 for interpolation with two pixels
@@ -68,4 +77,3 @@ EXTERN uint8_t Cb[IMAGE_ROW_SIZE >> 1][IMAGE_COL_SIZE >> 1]; // Chrominance (Cb)
 EXTERN uint8_t Cr[IMAGE_ROW_SIZE >> 1][IMAGE_COL_SIZE >> 1]; // Chrominance (Cr) array pointer
 EXTERN uint8_t Cb_temp[IMAGE_ROW_SIZE][IMAGE_COL_SIZE]; // Chrominance (Cb) temp array pointer
 EXTERN uint8_t Cr_temp[IMAGE_ROW_SIZE][IMAGE_COL_SIZE]; // Chrominance (Cr) temp array pointer
-

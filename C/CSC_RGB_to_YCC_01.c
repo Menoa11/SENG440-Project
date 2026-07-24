@@ -8,12 +8,18 @@
 
 // private data
 
-// private prototypes
+// private prototypes / definitions
+// The routine implementations are compiled in only for the selected
+// RGB_to_YCC_ROUTINE, so unused variants are completely absent from
+// the object file (true dead-code elimination, not just link-time).
+
+#if RGB_to_YCC_ROUTINE == 1
 // =======
 static void CSC_RGB_to_YCC_brute_force_float( int row, int col);
-
+#elif RGB_to_YCC_ROUTINE == 2
 // =======
 static void CSC_RGB_to_YCC_brute_force_int( int row, int col);
+#endif
 
 // =======
 static uint8_t chrominance_downsample(
@@ -21,6 +27,8 @@ static uint8_t chrominance_downsample(
     uint8_t C_pixel_3, uint8_t C_pixel_4);
 
 // private definitions
+
+#if RGB_to_YCC_ROUTINE == 1
 // =======
 static void CSC_RGB_to_YCC_brute_force_float( int row, int col) {
 //
@@ -78,7 +86,9 @@ static void CSC_RGB_to_YCC_brute_force_float( int row, int col) {
                                                Cr_pixel_10,
                                                Cr_pixel_11);
 } // END of CSC_RGB_to_YCC_brute_force_float()
+#endif // RGB_to_YCC_ROUTINE == 1
 
+#if RGB_to_YCC_ROUTINE == 2
 // =======
 static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
 //
@@ -105,28 +115,28 @@ static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
   B_pixel_10 = (int)B[row+1][col+0];
   B_pixel_11 = (int)B[row+1][col+1];
 
-  Y_pixel_00 = (16 << (K)) + C11 * R_pixel_00
-                           + C12 * G_pixel_00
-                           + C13 * B_pixel_00;
-  Y_pixel_00 += (1 << (K-1)); // rounding
+  Y_pixel_00 = BIAS_LUMA + C11 * R_pixel_00
+                         + C12 * G_pixel_00
+                         + C13 * B_pixel_00;
+  Y_pixel_00 += ROUND_K; // rounding
   Y_pixel_00 = Y_pixel_00 >> K;
 
-  Y_pixel_01 = (16 << (K)) + C11 * R_pixel_01
-                           + C12 * G_pixel_01
-                           + C13 * B_pixel_01;
-  Y_pixel_01 += (1 << (K-1)); // rounding
+  Y_pixel_01 = BIAS_LUMA + C11 * R_pixel_01
+                         + C12 * G_pixel_01
+                         + C13 * B_pixel_01;
+  Y_pixel_01 += ROUND_K; // rounding
   Y_pixel_01 = Y_pixel_01 >> K;
 
-  Y_pixel_10 = (16 << (K)) + C11 * R_pixel_10
-                           + C12 * G_pixel_10
-                           + C13 * B_pixel_10;
-  Y_pixel_10 += (1 << (K-1)); // rounding
+  Y_pixel_10 = BIAS_LUMA + C11 * R_pixel_10
+                         + C12 * G_pixel_10
+                         + C13 * B_pixel_10;
+  Y_pixel_10 += ROUND_K; // rounding
   Y_pixel_10 = Y_pixel_10 >> K;
 
-  Y_pixel_11 = (16 << (K)) + C11 * R_pixel_11
-                           + C12 * G_pixel_11
-                           + C13 * B_pixel_11;
-  Y_pixel_11 += (1 << (K-1)); // rounding
+  Y_pixel_11 = BIAS_LUMA + C11 * R_pixel_11
+                         + C12 * G_pixel_11
+                         + C13 * B_pixel_11;
+  Y_pixel_11 += ROUND_K; // rounding
   Y_pixel_11 = Y_pixel_11 >> K;
 
   Y[row+0][col+0] = (uint8_t)Y_pixel_00;
@@ -134,52 +144,52 @@ static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
   Y[row+1][col+0] = (uint8_t)Y_pixel_10;
   Y[row+1][col+1] = (uint8_t)Y_pixel_11;
 
-  Cb_pixel_00 = (128 << (K)) - C21 * R_pixel_00
-                             - C22 * G_pixel_00
-                             + C23 * B_pixel_00;
-  Cb_pixel_00 += (1 << (K-1)); // rounding
+  Cb_pixel_00 = BIAS_CHROMA - C21 * R_pixel_00
+                            - C22 * G_pixel_00
+                            + C23 * B_pixel_00;
+  Cb_pixel_00 += ROUND_K; // rounding
   Cb_pixel_00 = Cb_pixel_00 >> K;
 
-  Cb_pixel_01 = (128 << (K)) - C21 * R_pixel_01
-                             - C22 * G_pixel_01
-                             + C23 * B_pixel_01;
-  Cb_pixel_01 += (1 << (K-1)); // rounding
+  Cb_pixel_01 = BIAS_CHROMA - C21 * R_pixel_01
+                            - C22 * G_pixel_01
+                            + C23 * B_pixel_01;
+  Cb_pixel_01 += ROUND_K; // rounding
   Cb_pixel_01 = Cb_pixel_01 >> K;
 
-  Cb_pixel_10 = (128 << (K)) - C21 * R_pixel_10
-                             - C22 * G_pixel_10
-                             + C23 * B_pixel_10;
-  Cb_pixel_10 += (1 << (K-1)); // rounding
+  Cb_pixel_10 = BIAS_CHROMA - C21 * R_pixel_10
+                            - C22 * G_pixel_10
+                            + C23 * B_pixel_10;
+  Cb_pixel_10 += ROUND_K; // rounding
   Cb_pixel_10 = Cb_pixel_10 >> K;
 
-  Cb_pixel_11 = (128 << (K)) - C21 * R_pixel_11
-                             - C22 * G_pixel_11
-                             + C23 * B_pixel_11;
-  Cb_pixel_11 += (1 << (K-1)); // rounding
+  Cb_pixel_11 = BIAS_CHROMA - C21 * R_pixel_11
+                            - C22 * G_pixel_11
+                            + C23 * B_pixel_11;
+  Cb_pixel_11 += ROUND_K; // rounding
   Cb_pixel_11 = Cb_pixel_11 >> K;
 
-  Cr_pixel_00 = (128 << (K)) + C31 * R_pixel_00
-                             - C32 * G_pixel_00
-                             - C33 * B_pixel_00;
-  Cr_pixel_00 += (1 << (K-1)); // rounding
+  Cr_pixel_00 = BIAS_CHROMA + C31 * R_pixel_00
+                            - C32 * G_pixel_00
+                            - C33 * B_pixel_00;
+  Cr_pixel_00 += ROUND_K; // rounding
   Cr_pixel_00 = Cr_pixel_00 >> K;
 
-  Cr_pixel_01 = (128 << (K)) + C31 * R_pixel_01
-                             - C32 * G_pixel_01
-                             - C33 * B_pixel_01;
-  Cr_pixel_01 += (1 << (K-1)); // rounding
+  Cr_pixel_01 = BIAS_CHROMA + C31 * R_pixel_01
+                            - C32 * G_pixel_01
+                            - C33 * B_pixel_01;
+  Cr_pixel_01 += ROUND_K; // rounding
   Cr_pixel_01 = Cr_pixel_01 >> K;
 
-  Cr_pixel_10 = (128 << (K)) + C31 * R_pixel_10
-                             - C32 * G_pixel_10
-                             - C33 * B_pixel_10;
-  Cr_pixel_10 += (1 << (K-1)); // rounding
+  Cr_pixel_10 = BIAS_CHROMA + C31 * R_pixel_10
+                            - C32 * G_pixel_10
+                            - C33 * B_pixel_10;
+  Cr_pixel_10 += ROUND_K; // rounding
   Cr_pixel_10 = Cr_pixel_10 >> K;
 
-  Cr_pixel_11 = (128 << (K)) + C31 * R_pixel_11
-                             - C32 * G_pixel_11
-                             - C33 * B_pixel_11;
-  Cr_pixel_11 += (1 << (K-1)); // rounding
+  Cr_pixel_11 = BIAS_CHROMA + C31 * R_pixel_11
+                            - C32 * G_pixel_11
+                            - C33 * B_pixel_11;
+  Cr_pixel_11 += ROUND_K; // rounding
   Cr_pixel_11 = Cr_pixel_11 >> K;
 
   Cb[row>>1][col>>1] = chrominance_downsample( (uint8_t)Cb_pixel_00,
@@ -192,6 +202,7 @@ static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
                                                (uint8_t)Cr_pixel_10,
                                                (uint8_t)Cr_pixel_11);
 } // END of CSC_RGB_to_YCC_brute_force_int()
+#endif // RGB_to_YCC_ROUTINE == 2
 
 // =======
 static uint8_t chrominance_downsample(
@@ -206,7 +217,7 @@ static uint8_t chrominance_downsample(
     case 1:
       return( C_pixel_00);
     case 2:
-      temp = (int)C_pixel_00 + (int)C_pixel_01 + 
+      temp = (int)C_pixel_00 + (int)C_pixel_01 +
              (int)C_pixel_10 + (int)C_pixel_11;
       temp += (1 << 1); // rounding
       temp = temp >> 2;
@@ -221,20 +232,16 @@ void CSC_RGB_to_YCC( void) {
   int row, col; // indices for row and column
 //
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
-    for( col=0; col<IMAGE_COL_SIZE; col+=2) { 
+    for( col=0; col<IMAGE_COL_SIZE; col+=2) {
       //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
-      switch (RGB_to_YCC_ROUTINE) {
-        case 0:
-          break;
-        case 1:
-          CSC_RGB_to_YCC_brute_force_float( row, col);
-          break;
-        case 2:
-          CSC_RGB_to_YCC_brute_force_int( row, col);
-          break;
-        default:
-          break;
-      }
+      // Preprocessor dispatch on the compile-time RGB_to_YCC_ROUTINE.
+      // No runtime switch, no branch per iteration; the unselected
+      // call site is not emitted at all.
+#if RGB_to_YCC_ROUTINE == 1
+      CSC_RGB_to_YCC_brute_force_float( row, col);
+#elif RGB_to_YCC_ROUTINE == 2
+      CSC_RGB_to_YCC_brute_force_int( row, col);
+#endif
 //      printf( "Luma_00  = %02hhx\n", Y[row+0][col+0]);
 //      printf( "Luma_01  = %02hhx\n", Y[row+0][col+1]);
 //      printf( "Luma_10  = %02hhx\n", Y[row+1][col+0]);
@@ -243,4 +250,3 @@ void CSC_RGB_to_YCC( void) {
   }
 
 } // END of CSC_RGB_to_YCC()
-
