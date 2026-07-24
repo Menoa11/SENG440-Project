@@ -46,8 +46,9 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col) {
   float G_pixel_00, G_pixel_01, G_pixel_10, G_pixel_11;
   float B_pixel_00, B_pixel_01, B_pixel_10, B_pixel_11;
 
-  // Upsample Cb and Cr into Cb_temp and Cr_temp
-  chrominance_array_upsample();
+  // NOTE: chrominance_array_upsample() is hoisted to CSC_YCC_to_RGB()
+  // and called once per frame (Cb_temp/Cr_temp are invariant across the
+  // 2x2 block loop).
 
   R_pixel_00 =   1.164*(Y[row+0][col+0] - 16.0)
                + 1.596*(Cr_temp[row+0][col+0] - 128.0);
@@ -126,8 +127,13 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   int Cb_pixel_00, Cb_pixel_01, Cb_pixel_10, Cb_pixel_11;
   int Cr_pixel_00, Cr_pixel_01, Cr_pixel_10, Cr_pixel_11;
 
-  // Upsample Cb and Cr into Cb_temp and Cr_temp
-  chrominance_array_upsample();
+  // Common subexpression: D1 * Y_pixel_XX is reused across
+  // R, G, and B channel calculations for each of the 4 pixels.
+  int luma_00, luma_01, luma_10, luma_11;
+
+  // NOTE: chrominance_array_upsample() is hoisted to CSC_YCC_to_RGB()
+  // and called once per frame (Cb_temp/Cr_temp are invariant across the
+  // 2x2 block loop).
 
   Y_pixel_00 = (int)Y[row+0][col+0];
   Y_pixel_01 = (int)Y[row+0][col+1];
@@ -159,19 +165,28 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   Cr_pixel_10 = Cr_pixel_10 - 128;
   Cr_pixel_11 = Cr_pixel_11 - 128;
 
-  R_pixel_00 = D1 * Y_pixel_00 + D2 * Cr_pixel_00;
+  // CSE: compute the luma term (D1 * Y_pixel_XX) once per pixel and
+  // reuse it across the R, G, and B channel calculations below.
+  // This eliminates 8 redundant multiplications per 2x2 block
+  // (originally 3 D1*Y products per pixel x 4 pixels = 12; now 4).
+  luma_00 = D1 * Y_pixel_00;
+  luma_01 = D1 * Y_pixel_01;
+  luma_10 = D1 * Y_pixel_10;
+  luma_11 = D1 * Y_pixel_11;
+
+  R_pixel_00 = luma_00 + D2 * Cr_pixel_00;
   R_pixel_00 += (1 << (K-1)); // rounding
   R_pixel_00 = R_pixel_00 >> K;
 
-  R_pixel_01 = D1 * Y_pixel_01 + D2 * Cr_pixel_01;
+  R_pixel_01 = luma_01 + D2 * Cr_pixel_01;
   R_pixel_01 += (1 << (K-1)); // rounding
   R_pixel_01 = R_pixel_01 >> K;
 
-  R_pixel_10 = D1 * Y_pixel_10 + D2 * Cr_pixel_10;
+  R_pixel_10 = luma_10 + D2 * Cr_pixel_10;
   R_pixel_10 += (1 << (K-1)); // rounding
   R_pixel_10 = R_pixel_10 >> K;
 
-  R_pixel_11 = D1 * Y_pixel_11 + D2 * Cr_pixel_11;
+  R_pixel_11 = luma_11 + D2 * Cr_pixel_11;
   R_pixel_11 += (1 << (K-1)); // rounding
   R_pixel_11 = R_pixel_11 >> K;
 
@@ -180,23 +195,23 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   R[row+1][col+0] = (uint8_t)R_pixel_10;
   R[row+1][col+1] = (uint8_t)R_pixel_11;
 
-  G_pixel_00 = D1 * Y_pixel_00 - D3 * Cr_pixel_00
-                               - D4 * Cb_pixel_00;
+  G_pixel_00 = luma_00 - D3 * Cr_pixel_00
+                       - D4 * Cb_pixel_00;
   G_pixel_00 += (1 << (K-1)); // rounding
   G_pixel_00 = G_pixel_00 >> K;
 
-  G_pixel_01 = D1 * Y_pixel_01 - D3 * Cr_pixel_01
-                               - D4 * Cb_pixel_01;
+  G_pixel_01 = luma_01 - D3 * Cr_pixel_01
+                       - D4 * Cb_pixel_01;
   G_pixel_01 += (1 << (K-1)); // rounding
   G_pixel_01 = G_pixel_01 >> K;
 
-  G_pixel_10 = D1 * Y_pixel_10 - D3 * Cr_pixel_10
-                               - D4 * Cb_pixel_10;
+  G_pixel_10 = luma_10 - D3 * Cr_pixel_10
+                       - D4 * Cb_pixel_10;
   G_pixel_10 += (1 << (K-1)); // rounding
   G_pixel_10 = G_pixel_10 >> K;
 
-  G_pixel_11 = D1 * Y_pixel_11 - D3 * Cr_pixel_11
-                               - D4 * Cb_pixel_11;
+  G_pixel_11 = luma_11 - D3 * Cr_pixel_11
+                       - D4 * Cb_pixel_11;
   G_pixel_11 += (1 << (K-1)); // rounding
   G_pixel_11 = G_pixel_11 >> K;
 
@@ -205,19 +220,19 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   G[row+1][col+0] = (uint8_t)G_pixel_10;
   G[row+1][col+1] = (uint8_t)G_pixel_11;
 
-  B_pixel_00 = D1 * Y_pixel_00 + D5 * Cb_pixel_00;
+  B_pixel_00 = luma_00 + D5 * Cb_pixel_00;
   B_pixel_00 += (1 << (K-1)); // rounding
   B_pixel_00 = B_pixel_00 >> K;
 
-  B_pixel_01 = D1 * Y_pixel_01 + D5 * Cb_pixel_01;
+  B_pixel_01 = luma_01 + D5 * Cb_pixel_01;
   B_pixel_01 += (1 << (K-1)); // rounding
   B_pixel_01 = B_pixel_01 >> K;
 
-  B_pixel_10 = D1 * Y_pixel_10 + D5 * Cb_pixel_10;
+  B_pixel_10 = luma_10 + D5 * Cb_pixel_10;
   B_pixel_10 += (1 << (K-1)); // rounding
   B_pixel_10 = B_pixel_10 >> K;
 
-  B_pixel_11 = D1 * Y_pixel_11 + D5 * Cb_pixel_11;
+  B_pixel_11 = luma_11 + D5 * Cb_pixel_11;
   B_pixel_11 += (1 << (K-1)); // rounding
   B_pixel_11 = B_pixel_11 >> K;
 
@@ -258,7 +273,7 @@ static void chrominance_upsample(
       temp_left += (1 << 0); // rounding
       *left = (uint8_t)(temp_left >> 1);
 //
-      temp_middle = (int)C_pixel_00 + (int)C_pixel_01 + 
+      temp_middle = (int)C_pixel_00 + (int)C_pixel_01 +
                     (int)C_pixel_10 + (int)C_pixel_11;
       temp_middle += (1 << 1); // rounding
       *middle = (uint8_t)(temp_middle >> 2);
@@ -277,7 +292,7 @@ static void chrominance_array_upsample( void) {
   uint8_t middle;
 
   for( row=0; row<((IMAGE_ROW_SIZE>>1)-1); row+=1) {
-    for( col=0; col<((IMAGE_COL_SIZE>>1)-1); col+=1) { 
+    for( col=0; col<((IMAGE_COL_SIZE>>1)-1); col+=1) {
       chrominance_upsample( Cb[row+0][col+0], Cb[row+0][col+1],
                             Cb[row+1][col+0], Cb[row+1][col+1],
                             &top, &left, &middle);
@@ -352,8 +367,15 @@ static void chrominance_array_upsample( void) {
 void CSC_YCC_to_RGB( void) {
   int row, col; // indices for row and column
 //
+  // Upsample Cb/Cr into Cb_temp/Cr_temp once per frame.
+  // Hoisted out of the per-block workers: Cb/Cr are invariant across
+  // the 2x2 block loop, so recomputing per block was O(N^2) waste.
+  // If any in-place chroma filtering is ever added inside the block
+  // loop, this hoist must be revisited.
+  chrominance_array_upsample();
+
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
-    for( col=0; col<IMAGE_COL_SIZE; col+=2) { 
+    for( col=0; col<IMAGE_COL_SIZE; col+=2) {
       //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
       switch (YCC_to_RGB_ROUTINE) {
         case 0:
@@ -375,4 +397,3 @@ void CSC_YCC_to_RGB( void) {
   }
 
 } // END of CSC_YCC_to_RGB()
-
