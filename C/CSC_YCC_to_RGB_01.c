@@ -334,21 +334,36 @@ void CSC_YCC_to_RGB( void) {
     cb_row_next = (cb_row + 1 < (IMAGE_ROW_SIZE >> 1)) ? cb_row + 1
                                                        : cb_row;
 
+    // Local pointer aliases: hoist the per-row base address out of
+    // the inner column loop so `Cb[cb_row][cb_col]` doesn't recompute
+    // `&Cb[0][0] + cb_row * (IMAGE_COL_SIZE >> 1)` on every access.
+    // `restrict` tells GCC that reads/writes through these pointers
+    // do not alias with any other restrict-qualified pointer, which
+    // lets it reorder loads and schedule the upsample+reconstruction
+    // more aggressively (Cb and Cr are distinct globals in
+    // CSC_global.h; `Cb` is not written during CSC_YCC_to_RGB, so
+    // even the edge case where cb_row_next == cb_row is safe).
+    const uint8_t * restrict cb_row_ptr      = &Cb[cb_row     ][0];
+    const uint8_t * restrict cb_row_next_ptr = &Cb[cb_row_next][0];
+    const uint8_t * restrict cr_row_ptr      = &Cr[cb_row     ][0];
+    const uint8_t * restrict cr_row_next_ptr = &Cr[cb_row_next][0];
+
     for( col=0; col<IMAGE_COL_SIZE; col+=2) {
       cb_col      = col >> 1;
       cb_col_next = (cb_col + 1 < (IMAGE_COL_SIZE >> 1)) ? cb_col + 1
                                                          : cb_col;
 
-      // Read 4 source chroma pixels (with edge replication).
-      cb_src_00 = Cb[cb_row     ][cb_col     ];
-      cb_src_01 = Cb[cb_row     ][cb_col_next];
-      cb_src_10 = Cb[cb_row_next][cb_col     ];
-      cb_src_11 = Cb[cb_row_next][cb_col_next];
+      // Read 4 source chroma pixels (with edge replication) via the
+      // per-row pointer aliases above.
+      cb_src_00 = cb_row_ptr     [cb_col     ];
+      cb_src_01 = cb_row_ptr     [cb_col_next];
+      cb_src_10 = cb_row_next_ptr[cb_col     ];
+      cb_src_11 = cb_row_next_ptr[cb_col_next];
 
-      cr_src_00 = Cr[cb_row     ][cb_col     ];
-      cr_src_01 = Cr[cb_row     ][cb_col_next];
-      cr_src_10 = Cr[cb_row_next][cb_col     ];
-      cr_src_11 = Cr[cb_row_next][cb_col_next];
+      cr_src_00 = cr_row_ptr     [cb_col     ];
+      cr_src_01 = cr_row_ptr     [cb_col_next];
+      cr_src_10 = cr_row_next_ptr[cb_col     ];
+      cr_src_11 = cr_row_next_ptr[cb_col_next];
 
       // Upsample -> {top, left, middle} for both Cb and Cr.
       chrominance_upsample( cb_src_00, cb_src_01,
