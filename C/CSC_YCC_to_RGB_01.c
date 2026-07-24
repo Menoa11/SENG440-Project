@@ -13,15 +13,24 @@
 // compiled in only for the selected YCC_to_RGB_ROUTINE, so unused
 // variants are completely absent from the object file
 // (true dead-code elimination, not just link-time).
+//
+// The block workers now accept the four upsampled chroma values as
+// parameters (cb_00/01/10/11 and cr_00/01/10/11) instead of reading
+// them from the deleted Cb_temp/Cr_temp arrays. The upsample is
+// fused into the outer CSC_YCC_to_RGB loop and computed per block.
 
 #if YCC_to_RGB_ROUTINE == 1
 // =======
 static inline uint8_t saturation_float( float argument);
-static void CSC_YCC_to_RGB_brute_force_float( int row, int col);
+static void CSC_YCC_to_RGB_brute_force_float( int row, int col,
+    uint8_t cb_00, uint8_t cb_01, uint8_t cb_10, uint8_t cb_11,
+    uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11);
 #elif YCC_to_RGB_ROUTINE == 2
 // =======
 static inline uint8_t saturation_int( int argument);
-static void CSC_YCC_to_RGB_brute_force_int( int row, int col);
+static void CSC_YCC_to_RGB_brute_force_int( int row, int col,
+    uint8_t cb_00, uint8_t cb_01, uint8_t cb_10, uint8_t cb_11,
+    uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11);
 #endif
 
 // =======
@@ -29,8 +38,6 @@ static inline void chrominance_upsample(
     uint8_t C_pixel_1, uint8_t C_pixel_2,
     uint8_t C_pixel_3, uint8_t C_pixel_4,
     uint8_t *top, uint8_t *left, uint8_t *middle);
-// =======
-static void chrominance_array_upsample( void);
 
 // private definitions
 
@@ -48,66 +55,68 @@ static inline uint8_t saturation_float( float argument) {
 } // END of saturation_float()
 
 // =======
-static void CSC_YCC_to_RGB_brute_force_float( int row, int col) {
+static void CSC_YCC_to_RGB_brute_force_float( int row, int col,
+    uint8_t cb_00, uint8_t cb_01, uint8_t cb_10, uint8_t cb_11,
+    uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11) {
 //
   float R_pixel_00, R_pixel_01, R_pixel_10, R_pixel_11;
   float G_pixel_00, G_pixel_01, G_pixel_10, G_pixel_11;
   float B_pixel_00, B_pixel_01, B_pixel_10, B_pixel_11;
 
-  // NOTE: chrominance_array_upsample() is hoisted to CSC_YCC_to_RGB()
-  // and called once per frame (Cb_temp/Cr_temp are invariant across the
-  // 2x2 block loop).
+  // Chroma values now come in as parameters (upsampled on the fly by
+  // the caller). Layout: xx_00 = source, xx_01 = top-neighbor,
+  // xx_10 = left-neighbor, xx_11 = middle (diagonal).
 
   R_pixel_00 =   1.164*(Y[row+0][col+0] - 16.0)
-               + 1.596*(Cr_temp[row+0][col+0] - 128.0);
+               + 1.596*(cr_00 - 128.0);
   R[row+0][col+0] = saturation_float( R_pixel_00);
 //
   R_pixel_01 =   1.164*(Y[row+0][col+1] - 16.0)
-               + 1.596*(Cr_temp[row+0][col+1] - 128.0);
+               + 1.596*(cr_01 - 128.0);
   R[row+0][col+1] = saturation_float( R_pixel_01);
 //
   R_pixel_10 =   1.164*(Y[row+1][col+0] - 16.0)
-               + 1.596*(Cr_temp[row+1][col+0] - 128.0);
+               + 1.596*(cr_10 - 128.0);
   R[row+1][col+0] = saturation_float( R_pixel_10);
 //
   R_pixel_11 =   1.164*(Y[row+1][col+1] - 16.0)
-               + 1.596*(Cr_temp[row+1][col+1] - 128.0);
+               + 1.596*(cr_11 - 128.0);
   R[row+1][col+1] = saturation_float( R_pixel_11);
 
   G_pixel_00 =   1.164*(Y[row+0][col+0] - 16.0)
-               - 0.813*(Cr_temp[row+0][col+0] - 128.0)
-               - 0.391*(Cb_temp[row+0][col+0] - 128.0);
+               - 0.813*(cr_00 - 128.0)
+               - 0.391*(cb_00 - 128.0);
   G[row+0][col+0] = saturation_float( G_pixel_00);
 //
   G_pixel_01 =   1.164*(Y[row+0][col+1] - 16.0)
-               - 0.813*(Cr_temp[row+0][col+1] - 128.0)
-               - 0.391*(Cb_temp[row+0][col+1] - 128.0);
+               - 0.813*(cr_01 - 128.0)
+               - 0.391*(cb_01 - 128.0);
   G[row+0][col+1] = saturation_float( G_pixel_01);
 //
   G_pixel_10 =   1.164*(Y[row+1][col+0] - 16.0)
-               - 0.813*(Cr_temp[row+1][col+0] - 128.0)
-               - 0.391*(Cb_temp[row+1][col+0] - 128.0);
+               - 0.813*(cr_10 - 128.0)
+               - 0.391*(cb_10 - 128.0);
   G[row+1][col+0] = saturation_float( G_pixel_10);
 //
   G_pixel_11 =   1.164*(Y[row+1][col+1] - 16.0)
-               - 0.813*(Cr_temp[row+1][col+1] - 128.0)
-               - 0.391*(Cb_temp[row+1][col+1] - 128.0);
+               - 0.813*(cr_11 - 128.0)
+               - 0.391*(cb_11 - 128.0);
   G[row+1][col+1] = saturation_float( G_pixel_11);
 
   B_pixel_00 =   1.164*(Y[row+0][col+0] - 16.0)
-               + 2.018*(Cb_temp[row+0][col+0] - 128.0);
+               + 2.018*(cb_00 - 128.0);
   B[row+0][col+0] = saturation_float( B_pixel_00);
 //
   B_pixel_01 =   1.164*(Y[row+0][col+1] - 16.0)
-               + 2.018*(Cb_temp[row+0][col+1] - 128.0);
+               + 2.018*(cb_01 - 128.0);
   B[row+0][col+1] = saturation_float( B_pixel_01);
 //
   B_pixel_10 =   1.164*(Y[row+1][col+0] - 16.0)
-               + 2.018*(Cb_temp[row+1][col+0] - 128.0);
+               + 2.018*(cb_10 - 128.0);
   B[row+1][col+0] = saturation_float( B_pixel_10);
 //
   B_pixel_11 =   1.164*(Y[row+1][col+1] - 16.0)
-               + 2.018*(Cb_temp[row+1][col+1] - 128.0);
+               + 2.018*(cb_11 - 128.0);
   B[row+1][col+1] = saturation_float( B_pixel_11);
 } // END of CSC_YCC_to_RGB_brute_force_float()
 #endif // YCC_to_RGB_ROUTINE == 1
@@ -127,7 +136,9 @@ static inline uint8_t saturation_int( int argument) {
 } // END of saturation_int()
 
 // =======
-static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
+static void CSC_YCC_to_RGB_brute_force_int( int row, int col,
+    uint8_t cb_00, uint8_t cb_01, uint8_t cb_10, uint8_t cb_11,
+    uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11) {
 //
   int R_pixel_00, R_pixel_01, R_pixel_10, R_pixel_11;
   int G_pixel_00, G_pixel_01, G_pixel_10, G_pixel_11;
@@ -141,24 +152,24 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col) {
   // R, G, and B channel calculations for each of the 4 pixels.
   int luma_00, luma_01, luma_10, luma_11;
 
-  // NOTE: chrominance_array_upsample() is hoisted to CSC_YCC_to_RGB()
-  // and called once per frame (Cb_temp/Cr_temp are invariant across the
-  // 2x2 block loop).
+  // Chroma values now come in as parameters (upsampled on the fly by
+  // the caller). Layout: xx_00 = source, xx_01 = top-neighbor,
+  // xx_10 = left-neighbor, xx_11 = middle (diagonal).
 
   Y_pixel_00 = (int)Y[row+0][col+0];
   Y_pixel_01 = (int)Y[row+0][col+1];
   Y_pixel_10 = (int)Y[row+1][col+0];
   Y_pixel_11 = (int)Y[row+1][col+1];
 
-  Cb_pixel_00 = (int)Cb_temp[row+0][col+0];
-  Cb_pixel_01 = (int)Cb_temp[row+0][col+1];
-  Cb_pixel_10 = (int)Cb_temp[row+1][col+0];
-  Cb_pixel_11 = (int)Cb_temp[row+1][col+1];
+  Cb_pixel_00 = (int)cb_00;
+  Cb_pixel_01 = (int)cb_01;
+  Cb_pixel_10 = (int)cb_10;
+  Cb_pixel_11 = (int)cb_11;
 
-  Cr_pixel_00 = (int)Cr_temp[row+0][col+0];
-  Cr_pixel_01 = (int)Cr_temp[row+0][col+1];
-  Cr_pixel_10 = (int)Cr_temp[row+1][col+0];
-  Cr_pixel_11 = (int)Cr_temp[row+1][col+1];
+  Cr_pixel_00 = (int)cr_00;
+  Cr_pixel_01 = (int)cr_01;
+  Cr_pixel_10 = (int)cr_10;
+  Cr_pixel_11 = (int)cr_11;
 
   Y_pixel_00 = Y_pixel_00 - 16;
   Y_pixel_01 = Y_pixel_01 - 16;
@@ -295,111 +306,70 @@ static inline void chrominance_upsample(
 } // END of chrominance_upsample()
 
 // =======
-static void chrominance_array_upsample( void) {
-  int row, col;
-
-  uint8_t top;
-  uint8_t left;
-  uint8_t middle;
-
-  for( row=0; row<((IMAGE_ROW_SIZE>>1)-1); row+=1) {
-    for( col=0; col<((IMAGE_COL_SIZE>>1)-1); col+=1) {
-      chrominance_upsample( Cb[row+0][col+0], Cb[row+0][col+1],
-                            Cb[row+1][col+0], Cb[row+1][col+1],
-                            &top, &left, &middle);
-      Cb_temp[(row<<1)+0][(col<<1)+0] = Cb[row+0][col+0];
-      Cb_temp[(row<<1)+0][(col<<1)+1] = top;
-      Cb_temp[(row<<1)+1][(col<<1)+0] = left;
-      Cb_temp[(row<<1)+1][(col<<1)+1] = middle;
-      //
-      chrominance_upsample( Cr[row+0][col+0], Cr[row+0][col+1],
-                            Cr[row+1][col+0], Cr[row+1][col+1],
-                            &top, &left, &middle);
-      Cr_temp[(row<<1)+0][(col<<1)+0] = Cr[row+0][col+0];
-      Cr_temp[(row<<1)+0][(col<<1)+1] = top;
-      Cr_temp[(row<<1)+1][(col<<1)+0] = left;
-      Cr_temp[(row<<1)+1][(col<<1)+1] = middle;
-    }
-  }
-
-  col = (IMAGE_COL_SIZE>>1) - 1;
-  for( row=0; row<((IMAGE_ROW_SIZE>>1)-1); row+=1) {
-    chrominance_upsample( Cb[row+0][col], Cb[row+0][col],
-                          Cb[row+1][col], Cb[row+1][col],
-                          &top, &left, &middle);
-    Cb_temp[(row<<1)+0][(col<<1)+0] = Cb[row+0][col];
-    Cb_temp[(row<<1)+0][(col<<1)+1] = top;
-    Cb_temp[(row<<1)+1][(col<<1)+0] = left;
-    Cb_temp[(row<<1)+1][(col<<1)+1] = middle;
-    //
-    chrominance_upsample( Cr[row+0][col], Cr[row+0][col],
-                          Cr[row+1][col], Cr[row+1][col],
-                          &top, &left, &middle);
-    Cr_temp[(row<<1)+0][(col<<1)+0] = Cr[row+0][col];
-    Cr_temp[(row<<1)+0][(col<<1)+1] = top;
-    Cr_temp[(row<<1)+1][(col<<1)+0] = left;
-    Cr_temp[(row<<1)+1][(col<<1)+1] = middle;
-  }
-
-  row = (IMAGE_ROW_SIZE>>1) - 1;
-  for( col=0; col<((IMAGE_COL_SIZE>>1)-1); col+=1) {
-    chrominance_upsample( Cb[row][col+0], Cb[row][col+1],
-                          Cb[row][col+0], Cb[row][col+1],
-                          &top, &left, &middle);
-    Cb_temp[(row<<1)+0][(col<<1)+0] = Cb[row][col+0];
-    Cb_temp[(row<<1)+0][(col<<1)+1] = top;
-    Cb_temp[(row<<1)+1][(col<<1)+0] = left;
-    Cb_temp[(row<<1)+1][(col<<1)+1] = middle;
-    //
-    chrominance_upsample( Cr[row][col+0], Cr[row][col+1],
-                          Cr[row][col+0], Cr[row][col+1],
-                          &top, &left, &middle);
-    Cr_temp[(row<<1)+0][(col<<1)+0] = Cr[row][col+0];
-    Cr_temp[(row<<1)+0][(col<<1)+1] = top;
-    Cr_temp[(row<<1)+1][(col<<1)+0] = left;
-    Cr_temp[(row<<1)+1][(col<<1)+1] = middle;
-  }
-
-  row = (IMAGE_ROW_SIZE>>1) - 1;
-  col = (IMAGE_COL_SIZE>>1) - 1;
-  Cb_temp[(row<<1)+0][(col<<1)+0] = Cb[row][col];
-  Cb_temp[(row<<1)+0][(col<<1)+1] = Cb[row][col];
-  Cb_temp[(row<<1)+1][(col<<1)+0] = Cb[row][col];
-  Cb_temp[(row<<1)+1][(col<<1)+1] = Cb[row][col];
-  //
-  Cr_temp[(row<<1)+0][(col<<1)+0] = Cr[row][col];
-  Cr_temp[(row<<1)+0][(col<<1)+1] = Cr[row][col];
-  Cr_temp[(row<<1)+1][(col<<1)+0] = Cr[row][col];
-  Cr_temp[(row<<1)+1][(col<<1)+1] = Cr[row][col];
-
-} // END of chrominance_array_upsample()
-
-// =======
 void CSC_YCC_to_RGB( void) {
   int row, col; // indices for row and column
-//
-  // Upsample Cb/Cr into Cb_temp/Cr_temp once per frame.
-  // Hoisted out of the per-block workers: Cb/Cr are invariant across
-  // the 2x2 block loop, so recomputing per block was O(N^2) waste.
-  // If any in-place chroma filtering is ever added inside the block
-  // loop, this hoist must be revisited.
-  chrominance_array_upsample();
+  int cb_row, cb_row_next;
+  int cb_col, cb_col_next;
 
+  // Chroma source pixels for the current 2x2 luma block, with
+  // boundary replication at the right/bottom edges of the chroma
+  // plane (matches the original chrominance_array_upsample()
+  // boundary behaviour: last-row/last-col loops fed duplicated
+  // neighbours to chrominance_upsample).
+  uint8_t cb_src_00, cb_src_01, cb_src_10, cb_src_11;
+  uint8_t cr_src_00, cr_src_01, cr_src_10, cr_src_11;
+
+  // Upsampled chroma values for this 2x2 block.
+  uint8_t cb_top, cb_left, cb_middle;
+  uint8_t cr_top, cr_left, cr_middle;
+
+  // Loop fusion: chroma upsampling is computed on the fly, per
+  // block, instead of running a full-image pass into Cb_temp/Cr_temp
+  // beforehand. Halves the number of passes over the chroma data,
+  // eliminates two full-image (ROW x COL) temp buffers, and gives
+  // better cache behaviour on the reconstruction hot path.
+  //
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
+    cb_row      = row >> 1;
+    cb_row_next = (cb_row + 1 < (IMAGE_ROW_SIZE >> 1)) ? cb_row + 1
+                                                       : cb_row;
+
     for( col=0; col<IMAGE_COL_SIZE; col+=2) {
-      //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
-      // Preprocessor dispatch on the compile-time YCC_to_RGB_ROUTINE.
-      // No runtime switch, no branch per iteration; the unselected
-      // call site is not emitted at all.
+      cb_col      = col >> 1;
+      cb_col_next = (cb_col + 1 < (IMAGE_COL_SIZE >> 1)) ? cb_col + 1
+                                                         : cb_col;
+
+      // Read 4 source chroma pixels (with edge replication).
+      cb_src_00 = Cb[cb_row     ][cb_col     ];
+      cb_src_01 = Cb[cb_row     ][cb_col_next];
+      cb_src_10 = Cb[cb_row_next][cb_col     ];
+      cb_src_11 = Cb[cb_row_next][cb_col_next];
+
+      cr_src_00 = Cr[cb_row     ][cb_col     ];
+      cr_src_01 = Cr[cb_row     ][cb_col_next];
+      cr_src_10 = Cr[cb_row_next][cb_col     ];
+      cr_src_11 = Cr[cb_row_next][cb_col_next];
+
+      // Upsample -> {top, left, middle} for both Cb and Cr.
+      chrominance_upsample( cb_src_00, cb_src_01,
+                            cb_src_10, cb_src_11,
+                            &cb_top, &cb_left, &cb_middle);
+      chrominance_upsample( cr_src_00, cr_src_01,
+                            cr_src_10, cr_src_11,
+                            &cr_top, &cr_left, &cr_middle);
+
+      // Reconstruct RGB. Chroma layout for the 2x2 block:
+      //   [+0][+0] = source, [+0][+1] = top-neighbour,
+      //   [+1][+0] = left,   [+1][+1] = middle (diagonal).
 #if YCC_to_RGB_ROUTINE == 1
-      CSC_YCC_to_RGB_brute_force_float( row, col);
+      CSC_YCC_to_RGB_brute_force_float( row, col,
+          cb_src_00, cb_top, cb_left, cb_middle,
+          cr_src_00, cr_top, cr_left, cr_middle);
 #elif YCC_to_RGB_ROUTINE == 2
-      CSC_YCC_to_RGB_brute_force_int( row, col);
+      CSC_YCC_to_RGB_brute_force_int( row, col,
+          cb_src_00, cb_top, cb_left, cb_middle,
+          cr_src_00, cr_top, cr_left, cr_middle);
 #endif
-//      printf( "Luma_00  = %02hhx\n", Y[row+0][col+0]);
-//      printf( "Luma_01  = %02hhx\n", Y[row+0][col+1]);
-//      printf( "Luma_10  = %02hhx\n", Y[row+1][col+0]);
-//      printf( "Luma_11  = %02hhx\n\n", Y[row+1][col+1]);
     }
   }
 
