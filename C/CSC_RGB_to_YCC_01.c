@@ -202,20 +202,28 @@ void CSC_RGB_to_YCC( void) {
   int row, col; // indices for row and column
 //
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
-    for( col=0; col<IMAGE_COL_SIZE; col+=2) {
+    // Loop unrolled by UNROLL_FACTOR: each iteration processes
+    // UNROLL_FACTOR consecutive 2x2 blocks instead of one, so the
+    // col/=2-step compare+increment+branch runs 1/UNROLL_FACTOR as
+    // often. IMAGE_COL_SIZE is checked at compile time (CSC_global.h)
+    // to be a multiple of 2*UNROLL_FACTOR, so no remainder loop is
+    // needed.
+    for( col=0; col<IMAGE_COL_SIZE; col+=2*UNROLL_FACTOR) {
       //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
       // Preprocessor dispatch on the compile-time RGB_to_YCC_ROUTINE.
       // No runtime switch, no branch per iteration; the unselected
       // call site is not emitted at all.
 #if RGB_to_YCC_ROUTINE == 1
-      CSC_RGB_to_YCC_brute_force_float( row, col);
+      CSC_RGB_to_YCC_brute_force_float( row, col+0);
+      CSC_RGB_to_YCC_brute_force_float( row, col+2);
+      CSC_RGB_to_YCC_brute_force_float( row, col+4);
+      CSC_RGB_to_YCC_brute_force_float( row, col+6);
 #elif RGB_to_YCC_ROUTINE == 2
-      CSC_RGB_to_YCC_brute_force_int( row, col);
+      CSC_RGB_to_YCC_brute_force_int( row, col+0);
+      CSC_RGB_to_YCC_brute_force_int( row, col+2);
+      CSC_RGB_to_YCC_brute_force_int( row, col+4);
+      CSC_RGB_to_YCC_brute_force_int( row, col+6);
 #endif
-//      printf( "Luma_00  = %02hhx\n", Y[row+0][col+0]);
-//      printf( "Luma_01  = %02hhx\n", Y[row+0][col+1]);
-//      printf( "Luma_10  = %02hhx\n", Y[row+1][col+0]);
-//      printf( "Luma_11  = %02hhx\n\n", Y[row+1][col+1]);
     }
   }
 

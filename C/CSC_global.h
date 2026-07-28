@@ -14,6 +14,17 @@
 #define IMAGE_ROW_SIZE 480
 #define IMAGE_COL_SIZE 640
 
+// Manual loop-unroll factor for the per-block loops in CSC_RGB_to_YCC()
+// and CSC_YCC_to_RGB(): each unrolled iteration processes UNROLL_FACTOR
+// consecutive 2x2 blocks (2*UNROLL_FACTOR columns), cutting the
+// loop-control overhead (compare/increment/branch) by that factor and
+// giving the compiler more independent block calls to schedule between.
+#define UNROLL_FACTOR 4
+
+#if (IMAGE_COL_SIZE % (2 * UNROLL_FACTOR)) != 0
+#error "IMAGE_COL_SIZE must be a multiple of 2*UNROLL_FACTOR"
+#endif
+
 // RGB_to_YCC_ROUTINE
 //     1 for CSC_RGB_to_YCC_brute_force_float()
 //     2 for CSC_RGB_to_YCC_brute_force_int()

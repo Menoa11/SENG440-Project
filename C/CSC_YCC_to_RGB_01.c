@@ -253,23 +253,71 @@ static inline void chrominance_upsample(
   }
 } // END of chrominance_upsample()
 
-// =======
-void CSC_YCC_to_RGB( void) {
-  int row, col; // indices for row and column
-  int cb_row, cb_row_next;
+// One-block worker: reads the 4 source chroma pixels for a single
+// 2x2 luma block (with edge replication via the caller's row
+// pointers), upsamples them, and calls the reconstruction routine.
+// Factored out of the col loop so CSC_YCC_to_RGB()'s unrolling below
+// can call it several times per iteration without duplicating this
+// logic at each unrolled offset.
+static inline void CSC_YCC_to_RGB_block( int row, int col,
+    const uint8_t * restrict cb_row_ptr, const uint8_t * restrict cb_row_next_ptr,
+    const uint8_t * restrict cr_row_ptr, const uint8_t * restrict cr_row_next_ptr) {
   int cb_col, cb_col_next;
 
-  // Chroma source pixels for the current 2x2 luma block, with
-  // boundary replication at the right/bottom edges of the chroma
-  // plane (matches the original chrominance_array_upsample()
-  // boundary behaviour: last-row/last-col loops fed duplicated
-  // neighbours to chrominance_upsample).
+  // Chroma source pixels for this 2x2 luma block, with boundary
+  // replication at the right/bottom edges of the chroma plane
+  // (matches the original chrominance_array_upsample() boundary
+  // behaviour: last-row/last-col loops fed duplicated neighbours to
+  // chrominance_upsample).
   uint8_t cb_src_00, cb_src_01, cb_src_10, cb_src_11;
   uint8_t cr_src_00, cr_src_01, cr_src_10, cr_src_11;
 
   // Upsampled chroma values for this 2x2 block.
   uint8_t cb_top, cb_left, cb_middle;
   uint8_t cr_top, cr_left, cr_middle;
+
+  cb_col      = col >> 1;
+  cb_col_next = (cb_col + 1 < (IMAGE_COL_SIZE >> 1)) ? cb_col + 1
+                                                     : cb_col;
+
+  // Read 4 source chroma pixels (with edge replication) via the
+  // per-row pointer aliases passed in by the caller.
+  cb_src_00 = cb_row_ptr     [cb_col     ];
+  cb_src_01 = cb_row_ptr     [cb_col_next];
+  cb_src_10 = cb_row_next_ptr[cb_col     ];
+  cb_src_11 = cb_row_next_ptr[cb_col_next];
+
+  cr_src_00 = cr_row_ptr     [cb_col     ];
+  cr_src_01 = cr_row_ptr     [cb_col_next];
+  cr_src_10 = cr_row_next_ptr[cb_col     ];
+  cr_src_11 = cr_row_next_ptr[cb_col_next];
+
+  // Upsample -> {top, left, middle} for both Cb and Cr.
+  chrominance_upsample( cb_src_00, cb_src_01,
+                        cb_src_10, cb_src_11,
+                        &cb_top, &cb_left, &cb_middle);
+  chrominance_upsample( cr_src_00, cr_src_01,
+                        cr_src_10, cr_src_11,
+                        &cr_top, &cr_left, &cr_middle);
+
+  // Reconstruct RGB. Chroma layout for the 2x2 block:
+  //   [+0][+0] = source, [+0][+1] = top-neighbour,
+  //   [+1][+0] = left,   [+1][+1] = middle (diagonal).
+#if YCC_to_RGB_ROUTINE == 1
+  CSC_YCC_to_RGB_brute_force_float( row, col,
+      cb_src_00, cb_top, cb_left, cb_middle,
+      cr_src_00, cr_top, cr_left, cr_middle);
+#elif YCC_to_RGB_ROUTINE == 2
+  CSC_YCC_to_RGB_brute_force_int( row, col,
+      cb_src_00, cb_top, cb_left, cb_middle,
+      cr_src_00, cr_top, cr_left, cr_middle);
+#endif
+} // END of CSC_YCC_to_RGB_block()
+
+// =======
+void CSC_YCC_to_RGB( void) {
+  int row, col; // indices for row and column
+  int cb_row, cb_row_next;
 
   // Loop fusion: chroma upsampling is computed on the fly, per
   // block, instead of running a full-image pass into Cb_temp/Cr_temp
@@ -296,43 +344,21 @@ void CSC_YCC_to_RGB( void) {
     const uint8_t * restrict cr_row_ptr      = &Cr[cb_row     ][0];
     const uint8_t * restrict cr_row_next_ptr = &Cr[cb_row_next][0];
 
-    for( col=0; col<IMAGE_COL_SIZE; col+=2) {
-      cb_col      = col >> 1;
-      cb_col_next = (cb_col + 1 < (IMAGE_COL_SIZE >> 1)) ? cb_col + 1
-                                                         : cb_col;
-
-      // Read 4 source chroma pixels (with edge replication) via the
-      // per-row pointer aliases above.
-      cb_src_00 = cb_row_ptr     [cb_col     ];
-      cb_src_01 = cb_row_ptr     [cb_col_next];
-      cb_src_10 = cb_row_next_ptr[cb_col     ];
-      cb_src_11 = cb_row_next_ptr[cb_col_next];
-
-      cr_src_00 = cr_row_ptr     [cb_col     ];
-      cr_src_01 = cr_row_ptr     [cb_col_next];
-      cr_src_10 = cr_row_next_ptr[cb_col     ];
-      cr_src_11 = cr_row_next_ptr[cb_col_next];
-
-      // Upsample -> {top, left, middle} for both Cb and Cr.
-      chrominance_upsample( cb_src_00, cb_src_01,
-                            cb_src_10, cb_src_11,
-                            &cb_top, &cb_left, &cb_middle);
-      chrominance_upsample( cr_src_00, cr_src_01,
-                            cr_src_10, cr_src_11,
-                            &cr_top, &cr_left, &cr_middle);
-
-      // Reconstruct RGB. Chroma layout for the 2x2 block:
-      //   [+0][+0] = source, [+0][+1] = top-neighbour,
-      //   [+1][+0] = left,   [+1][+1] = middle (diagonal).
-#if YCC_to_RGB_ROUTINE == 1
-      CSC_YCC_to_RGB_brute_force_float( row, col,
-          cb_src_00, cb_top, cb_left, cb_middle,
-          cr_src_00, cr_top, cr_left, cr_middle);
-#elif YCC_to_RGB_ROUTINE == 2
-      CSC_YCC_to_RGB_brute_force_int( row, col,
-          cb_src_00, cb_top, cb_left, cb_middle,
-          cr_src_00, cr_top, cr_left, cr_middle);
-#endif
+    // Loop unrolled by UNROLL_FACTOR: each iteration processes
+    // UNROLL_FACTOR consecutive 2x2 blocks instead of one, so the
+    // col/=2-step compare+increment+branch runs 1/UNROLL_FACTOR as
+    // often. IMAGE_COL_SIZE is checked at compile time (CSC_global.h)
+    // to be a multiple of 2*UNROLL_FACTOR, so no remainder loop is
+    // needed.
+    for( col=0; col<IMAGE_COL_SIZE; col+=2*UNROLL_FACTOR) {
+      CSC_YCC_to_RGB_block( row, col+0,
+          cb_row_ptr, cb_row_next_ptr, cr_row_ptr, cr_row_next_ptr);
+      CSC_YCC_to_RGB_block( row, col+2,
+          cb_row_ptr, cb_row_next_ptr, cr_row_ptr, cr_row_next_ptr);
+      CSC_YCC_to_RGB_block( row, col+4,
+          cb_row_ptr, cb_row_next_ptr, cr_row_ptr, cr_row_next_ptr);
+      CSC_YCC_to_RGB_block( row, col+6,
+          cb_row_ptr, cb_row_next_ptr, cr_row_ptr, cr_row_next_ptr);
     }
   }
 
