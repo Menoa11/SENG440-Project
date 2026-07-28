@@ -21,8 +21,10 @@
 
 // YCC_to_RGB_ROUTINE
 //     1 for CSC_YCC_to_RGB_brute_force_float()
-//     2 for CSC_YCC_to_RGB_brute_force_int()
-#define YCC_to_RGB_ROUTINE 1
+//     2 for CSC_YCC_to_RGB_brute_force_int() (ARM NEON-vectorized; see
+//       CSC_YCC_to_RGB_01.c -- same fixed-point arithmetic/CSE as
+//       before, computed on 4-lane NEON vectors instead of scalars)
+#define YCC_to_RGB_ROUTINE 2
 
 // CHROMINANCE_DOWNSAMPLING_MODE =
 //     0 for returning zero (no chrominance)

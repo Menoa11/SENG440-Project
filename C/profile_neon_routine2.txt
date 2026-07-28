@@ -1,0 +1,506 @@
+--------------------------------------------------------------------------------
+Profile data file 'callgrind.out.neon_routine2' (creator: callgrind-3.24.0)
+--------------------------------------------------------------------------------
+I1 cache: 16384 B, 64 B, 4-way associative
+D1 cache: 16384 B, 64 B, 4-way associative
+LL cache: 262144 B, 64 B, 8-way associative
+Timerange: Basic block 0 - 17416475
+Trigger: Program termination
+Profiled target:  ./CSC_callgrind (PID 10900, part 1)
+Events recorded:  Ir Dr Dw I1mr D1mr D1mw ILmr DLmr DLmw Bc Bcm Bi Bim
+Events shown:     Ir Dr Dw I1mr D1mr D1mw ILmr DLmr DLmw Bc Bcm Bi Bim
+Event sort order: Ir Dr Dw I1mr D1mr D1mw ILmr DLmr DLmw Bc Bcm Bi Bim
+Thresholds:       99 0 0 0 0 0 0 0 0 0 0 0 0
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+Ir                   Dr                  Dw                  I1mr           D1mr            D1mw            ILmr           DLmr            DLmw            Bc                 Bcm            Bi                 Bim         
+--------------------------------------------------------------------------------
+104,035,163 (100.0%) 35,403,081 (100.0%) 26,309,232 (100.0%) 1,402 (100.0%) 74,542 (100.0%) 77,049 (100.0%) 1,310 (100.0%) 44,280 (100.0%) 36,909 (100.0%) 7,645,966 (100.0%) 5,817 (100.0%) 3,227,583 (100.0%) 80 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Ir                  Dr                  Dw                  I1mr        D1mr            D1mw            ILmr        DLmr            DLmw            Bc                 Bcm            Bi                 Bim         file:function
+--------------------------------------------------------------------------------
+50,686,854 (48.72%) 20,735,991 (58.57%) 18,430,868 (70.05%)  8 ( 0.57%)      5 ( 0.01%) 16,324 (21.19%)  8 ( 0.61%)      4 ( 0.01%)    441 ( 1.19%) 4,607,998 (60.27%)   449 ( 7.72%)         .          .           ./libio/./libio/fputc.c:fputc'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+18,431,084 (17.72%)  8,294,167 (23.43%)  5,529,370 (21.02%)  1 ( 0.07%)  4,485 ( 6.02%)      0           1 ( 0.08%)     63 ( 0.14%)      0          1,843,198 (24.11%)   242 ( 4.16%)         .          .           ./libio/./libio/getc.c:getc'2 [/usr/lib/aarch64-linux-gnu/libc.so.6]
+16,058,043 (15.44%)  3,482,126 ( 9.84%)    307,124 ( 1.17%)  4 ( 0.29%) 21,633 (29.02%)  4,727 ( 6.14%)  4 ( 0.31%) 21,602 (48.79%)  4,726 (12.80%)   794,925 (10.40%) 1,389 (23.88%) 1,996,723 (61.86%) .           CSC_main.c:_IO_file_overflow@@GLIBC_2.17'2
+ 9,218,981 ( 8.86%)  1,434,029 ( 4.05%)    614,476 ( 2.34%)  0               1 ( 0.00%)  9,675 (12.56%)  0               1 ( 0.00%)  9,675 (26.21%)   205,155 ( 2.68%)   333 ( 5.72%) 1,228,875 (38.07%) 1 ( 1.25%)  CSC_main.c:_IO_default_uflow'2
+ 4,304,654 ( 4.14%)    460,806 ( 1.30%)    921,600 ( 3.50%)  4 ( 0.29%) 16,614 (22.29%) 28,464 (36.94%)  4 ( 0.31%)  7,009 (15.83%) 14,402 (39.02%)    77,040 ( 1.01%)   263 ( 4.52%)         .          .           CSC_YCC_to_RGB_01.c:CSC_YCC_to_RGB [/home/student/SENG440-Project/C/CSC_callgrind]
+ 3,153,134 ( 3.03%)    921,606 ( 2.60%)    460,800 ( 1.75%)  6 ( 0.43%) 28,463 (38.18%) 16,615 (21.56%)  6 ( 0.46%) 14,402 (32.52%)  7,203 (19.52%)    77,040 ( 1.01%)   263 ( 4.52%)         .          .           CSC_RGB_to_YCC_01.c:CSC_RGB_to_YCC [/home/student/SENG440-Project/C/CSC_callgrind]
+ 1,152,010 ( 1.11%)          0                   0           2 ( 0.14%)      0               0           2 ( 0.15%)      .               .                  .              .                  .          .           /usr/lib/gcc/aarch64-linux-gnu/14/include/arm_neon.h:CSC_RGB_to_YCC
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: CSC_YCC_to_RGB_01.c
+--------------------------------------------------------------------------------
+Ir               Dr              Dw              I1mr       D1mr           D1mw           ILmr       DLmr           DLmw           Bc              Bcm          Bi Bim 
+
+-- line 161 ----------------------------------------
+      .               .               .          .              .              .          .              .              .               .            .          .          .               uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11) {
+      .               .               .          .              .              .          .              .              .               .            .          .          .           //
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // Chroma values come in as parameters (upsampled on the fly by the
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // caller). Layout: xx_00 = source, xx_01 = top-neighbor,
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // xx_10 = left-neighbor, xx_11 = middle (diagonal) -- same as
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // before vectorization. Lane order for every vector below is
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // [00, 01, 10, 11], i.e. the 4 pixels of this one 2x2 block.
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+460,800 ( 0.44%) 76,800 ( 0.22%)      0          1 ( 0.07%) 4,499 ( 6.04%)     0          1 ( 0.08%) 2,160 ( 4.88%)     .               .            .          .          .             const int16_t y_bias[4]  = { (int16_t)Y[row+0][col+0] - 16,
+153,600 ( 0.15%) 76,800 ( 0.22%)      .          .              .              .          .              .              .               .            .          .          .                                           (int16_t)Y[row+0][col+1] - 16,
+153,600 ( 0.15%) 76,800 ( 0.22%)      0          0          4,988 ( 6.69%)     0          0          2,640 ( 5.96%)     .               .            .          .          .                                           (int16_t)Y[row+1][col+0] - 16,
+153,600 ( 0.15%) 76,800 ( 0.22%)      .          .              .              .          .              .              .               .            .          .          .                                           (int16_t)Y[row+1][col+1] - 16 };
+460,800 ( 0.44%)      0               0          1 ( 0.07%)     0              0          1 ( 0.08%)     .              .               .            .          .          .             const int16_t cb_bias[4] = { (int16_t)cb_00 - 128, (int16_t)cb_01 - 128,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                           (int16_t)cb_10 - 128, (int16_t)cb_11 - 128 };
+460,800 ( 0.44%)      .               .          .              .              .          .              .              .               .            .          .          .             const int16_t cr_bias[4] = { (int16_t)cr_00 - 128, (int16_t)cr_01 - 128,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                           (int16_t)cr_10 - 128, (int16_t)cr_11 - 128 };
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t y_pixel  = vld1_s16( y_bias);
+      .               .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t cb_pixel = vld1_s16( cb_bias);
+      .               .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t cr_pixel = vld1_s16( cr_bias);
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // CSE, vectorized: D1*Y computed once and reused across R, G, and B
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // -- one vector multiply covers all 4 pixels of the block instead
+-- line 183 ----------------------------------------
+-- line 190 ----------------------------------------
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                                         cb_pixel, D4));
+      .               .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t B_pixel = neon_finish( neon_mac( luma, cb_pixel, D5));
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .             int16_t R_out[4], G_out[4], B_out[4];
+      .               .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( R_out, R_pixel);
+      .               .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( G_out, G_pixel);
+      .               .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( B_out, B_pixel);
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+ 76,800 ( 0.07%)      0          76,800 ( 0.29%) 0              0          4,500 ( 5.84%) 0              0          2,161 ( 5.85%)      .            .          .          .             R[row+0][col+0] = (uint8_t)R_out[0];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             R[row+0][col+1] = (uint8_t)R_out[1];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) 0              0          4,988 ( 6.47%) 0              0          2,640 ( 7.15%)      .            .          .          .             R[row+1][col+0] = (uint8_t)R_out[2];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             R[row+1][col+1] = (uint8_t)R_out[3];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+ 76,800 ( 0.07%)      0          76,800 ( 0.29%) 0              0          4,500 ( 5.84%) 0              0          2,161 ( 5.85%)      .            .          .          .             G[row+0][col+0] = (uint8_t)G_out[0];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             G[row+0][col+1] = (uint8_t)G_out[1];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) 0              0          4,988 ( 6.47%) 0              0          2,640 ( 7.15%)      .            .          .          .             G[row+1][col+0] = (uint8_t)G_out[2];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             G[row+1][col+1] = (uint8_t)G_out[3];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+ 76,800 ( 0.07%)      0          76,800 ( 0.29%) 1 ( 0.07%)     0          4,500 ( 5.84%) 1 ( 0.08%)     0          2,160 ( 5.85%)      .            .          .          .             B[row+0][col+0] = (uint8_t)B_out[0];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             B[row+0][col+1] = (uint8_t)B_out[1];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) 0              0          4,988 ( 6.47%) 0              0          2,640 ( 7.15%)      .            .          .          .             B[row+1][col+0] = (uint8_t)B_out[2];
+153,600 ( 0.15%)      0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             B[row+1][col+1] = (uint8_t)B_out[3];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .           } // END of CSC_YCC_to_RGB_brute_force_int()
+      .               .               .          .              .              .          .              .              .               .            .          .          .           #endif // YCC_to_RGB_ROUTINE == 2
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .           // =======
+      .               .               .          .              .              .          .              .              .               .            .          .          .           static inline void chrominance_upsample(
+      .               .               .          .              .              .          .              .              .               .            .          .          .               uint8_t C_pixel_00, uint8_t C_pixel_01,
+      .               .               .          .              .              .          .              .              .               .            .          .          .               uint8_t C_pixel_10, uint8_t C_pixel_11,
+-- line 219 ----------------------------------------
+-- line 272 ----------------------------------------
+      .               .               .          .              .              .          .              .              .               .            .          .          .             uint8_t cr_top, cr_left, cr_middle;
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // Loop fusion: chroma upsampling is computed on the fly, per
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // block, instead of running a full-image pass into Cb_temp/Cr_temp
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // beforehand. Halves the number of passes over the chroma data,
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // eliminates two full-image (ROW x COL) temp buffers, and gives
+      .               .               .          .              .              .          .              .              .               .            .          .          .             // better cache behaviour on the reconstruction hot path.
+      .               .               .          .              .              .          .              .              .               .            .          .          .             //
+  1,689 ( 0.00%)      4 ( 0.00%)      0          1 ( 0.07%)     2 ( 0.00%)     0          1 ( 0.08%)     2 ( 0.00%)     0             240 ( 0.00%)   3 ( 0.05%) .          .             for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
+  1,920 ( 0.00%)      .               .          .              .              .          .              .              .               .            .          .          .               cb_row      = row >> 1;
+      .               .               .          .              .              .          .              .              .               .            .          .          .               cb_row_next = (cb_row + 1 < (IMAGE_ROW_SIZE >> 1)) ? cb_row + 1
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                                                  : cb_row;
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // Local pointer aliases: hoist the per-row base address out of
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // the inner column loop so `Cb[cb_row][cb_col]` doesn't recompute
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // `&Cb[0][0] + cb_row * (IMAGE_COL_SIZE >> 1)` on every access.
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // `restrict` tells GCC that reads/writes through these pointers
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // do not alias with any other restrict-qualified pointer, which
+-- line 289 ----------------------------------------
+-- line 291 ----------------------------------------
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // more aggressively (Cb and Cr are distinct globals in
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // CSC_global.h; `Cb` is not written during CSC_YCC_to_RGB, so
+      .               .               .          .              .              .          .              .              .               .            .          .          .               // even the edge case where cb_row_next == cb_row is safe).
+      .               .               .          .              .              .          .              .              .               .            .          .          .               const uint8_t * restrict cb_row_ptr      = &Cb[cb_row     ][0];
+      .               .               .          .              .              .          .              .              .               .            .          .          .               const uint8_t * restrict cb_row_next_ptr = &Cb[cb_row_next][0];
+      .               .               .          .              .              .          .              .              .               .            .          .          .               const uint8_t * restrict cr_row_ptr      = &Cr[cb_row     ][0];
+      .               .               .          .              .              .          .              .              .               .            .          .          .               const uint8_t * restrict cr_row_next_ptr = &Cr[cb_row_next][0];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+537,840 ( 0.52%)      0               0          0              0              0          0              0              0          76,800 ( 1.00%) 260 ( 4.47%) .          .               for( col=0; col<IMAGE_COL_SIZE; col+=2) {
+ 76,800 ( 0.07%)      .               .          .              .              .          .              .              .               .            .          .          .                 cb_col      = col >> 1;
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cb_col_next = (cb_col + 1 < (IMAGE_COL_SIZE >> 1)) ? cb_col + 1
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                                                    : cb_col;
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 // Read 4 source chroma pixels (with edge replication) via the
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 // per-row pointer aliases above.
+153,602 ( 0.15%) 76,801 ( 0.22%)      0          0          3,561 ( 4.78%)     0          0          1,096 ( 2.48%)     .               .            .          .          .                 cb_src_00 = cb_row_ptr     [cb_col     ];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cb_src_01 = cb_row_ptr     [cb_col_next];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cb_src_10 = cb_row_next_ptr[cb_col     ];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cb_src_11 = cb_row_next_ptr[cb_col_next];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+ 76,802 ( 0.07%) 76,801 ( 0.22%)      0          0          3,564 ( 4.78%)     0          0          1,111 ( 2.51%)     .               .            .          .          .                 cr_src_00 = cr_row_ptr     [cb_col     ];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cr_src_01 = cr_row_ptr     [cb_col_next];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cr_src_10 = cr_row_next_ptr[cb_col     ];
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 cr_src_11 = cr_row_next_ptr[cb_col_next];
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 // Upsample -> {top, left, middle} for both Cb and Cr.
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 chrominance_upsample( cb_src_00, cb_src_01,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                       cb_src_10, cb_src_11,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                                       &cb_top, &cb_left, &cb_middle);
+-- line 319 ----------------------------------------
+-- line 331 ----------------------------------------
+      .               .               .          .              .              .          .              .              .               .            .          .          .           #elif YCC_to_RGB_ROUTINE == 2
+      .               .               .          .              .              .          .              .              .               .            .          .          .                 CSC_YCC_to_RGB_brute_force_int( row, col,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                     cb_src_00, cb_top, cb_left, cb_middle,
+      .               .               .          .              .              .          .              .              .               .            .          .          .                     cr_src_00, cr_top, cr_left, cr_middle);
+      .               .               .          .              .              .          .              .              .               .            .          .          .           #endif
+      .               .               .          .              .              .          .              .              .               .            .          .          .               }
+      .               .               .          .              .              .          .              .              .               .            .          .          .             }
+      .               .               .          .              .              .          .              .              .               .            .          .          .           
+      1 ( 0.00%)      .               .          .              .              .          .              .              .               .            .          .          .           } // END of CSC_YCC_to_RGB()
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /usr/lib/gcc/aarch64-linux-gnu/14/include/arm_neon.h
+--------------------------------------------------------------------------------
+Ir               Dr         Dw         I1mr       D1mr       D1mw       ILmr       DLmr DLmw Bc Bcm Bi Bim 
+
+-- line 4017 ----------------------------------------
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_vec_umlal_laneq_v2si_uuuus (__acc, __a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int32x4_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmlal_n_s16 (int32x4_t __a, int16x4_t __b, int16_t __c)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+768,007 ( 0.74%) 0          0          1 ( 0.07%) 0          0          1 ( 0.08%) .          .          .          .          .          .             return __builtin_aarch64_smlal_nv4hi (__a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int64x2_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmlal_n_s32 (int64x2_t __a, int32x2_t __b, int32_t __c)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_smlal_nv2si (__a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+-- line 4033 ----------------------------------------
+-- line 4435 ----------------------------------------
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_vec_umlsl_laneq_v2si_uuuus (__a, __b, __v, __lane);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int32x4_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmlsl_n_s16 (int32x4_t __a, int16x4_t __b, int16_t __c)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+614,407 ( 0.59%) 0          0          3 ( 0.21%) 0          0          3 ( 0.23%) .          .          .          .          .          .             return __builtin_aarch64_smlsl_nv4hi (__a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int64x2_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmlsl_n_s32 (int64x2_t __a, int32x2_t __b, int32_t __c)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_smlsl_nv2si (__a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+-- line 4451 ----------------------------------------
+-- line 4981 ----------------------------------------
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_vec_umult_laneq_v2si_uuus (__a, __b, __c);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int32x4_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmull_n_s16 (int16x4_t __a, int16_t __b)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+ 76,801 ( 0.07%) .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_smull_nv4hi (__a, __b);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int64x2_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vmull_n_s32 (int32x2_t __a, int32_t __b)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_smull_nv2si (__a, __b);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+-- line 4997 ----------------------------------------
+-- line 5576 ----------------------------------------
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_rshrn_nv8hi (__a, __b);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int16x4_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vrshrn_n_s32 (int32x4_t __a, const int __b)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+460,800 ( 0.44%) .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_rshrn_nv4si (__a, __b);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+      .          .          .          .          .          .          .          .          .          .          .          .          .           
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __extension__ extern __inline int32x2_t
+      .          .          .          .          .          .          .          .          .          .          .          .          .           __attribute__ ((__always_inline__, __gnu_inline__, __artificial__))
+      .          .          .          .          .          .          .          .          .          .          .          .          .           vrshrn_n_s64 (int64x2_t __a, const int __b)
+      .          .          .          .          .          .          .          .          .          .          .          .          .           {
+      .          .          .          .          .          .          .          .          .          .          .          .          .             return __builtin_aarch64_rshrn_nv2di (__a, __b);
+      .          .          .          .          .          .          .          .          .          .          .          .          .           }
+-- line 5592 ----------------------------------------
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: CSC_main.c
+--------------------------------------------------------------------------------
+Ir                 Dr               Dw               I1mr       D1mr           D1mw           ILmr       DLmr           DLmw           Bc               Bcm          Bi               Bim        
+
+-- line 6 ----------------------------------------
+        .                .                .          .              .              .          .              .              .                .            .                .          .           #include <stdio.h>
+        .                .                .          .              .              .          .              .              .                .            .                .          .           #include <stdint.h>
+        .                .                .          .              .              .          .              .              .                .            .                .          .           //#include <string.h>
+        .                .                .          .              .              .          .              .              .                .            .                .          .           #include <math.h>
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .           #define GLOBAL
+        .                .                .          .              .              .          .              .              .                .            .                .          .           #include "CSC_global.h"
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        3 ( 0.00%)       0                2 ( 0.00%) .              .              .          .              .              .                .            .                .          .           int main( void) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .             int row, col;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_input_RGB;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_echo_R;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_echo_G;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_echo_B;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_output_Y;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_output_Cb;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_output_Cr;
+        .                .                .          .              .              .          .              .              .                .            .                .          .             FILE *f_ID_output_RGB;
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_input_RGB = fopen( "./image_input_RGB_64_48_03.data", "rb");
+       14 ( 0.00%)       2 ( 0.00%)       2 ( 0.00%) 2 ( 0.14%)     0              0          2 ( 0.15%)     0              0                0            0                2 ( 0.00%) 1 ( 1.25%)    f_ID_input_RGB = fopen( "./image_input_RGB_640_480_02.data", "rb");
+103,934,788 (99.90%) 35,376,964 (99.93%) 26,296,584 (99.95%) 427 (30.46%) 73,179 (98.17%) 76,703 (99.55%) 411 (31.37%) 43,299 (97.78%) 36,596 (99.15%) 7,627,054 (99.75%) 3,294 (56.63%) 3,227,500 (100.0%) 22 (27.50%)  => ./elf/../sysdeps/aarch64/dl-trampoline.S:_dl_runtime_resolve'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        3 ( 0.00%)       0                2 ( 0.00%) 0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_input_RGB == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               printf( "Cannot open file.\n");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_echo_R = fopen( "./image_echo_R_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       1 ( 0.00%) 1 ( 0.07%)     0              0          0              0              0                0            0                1 ( 0.00%) 1 ( 1.25%)    f_ID_echo_R = fopen( "./image_echo_R_640_480_02.data", "wb");
+103,932,008 (99.90%) 35,376,417 (99.92%) 26,295,912 (99.95%) 308 (21.97%) 73,136 (98.11%) 76,651 (99.48%) 293 (22.37%) 43,274 (97.73%) 36,546 (99.02%) 7,626,629 (99.75%) 3,209 (55.17%) 3,227,484 (100.0%) 19 (23.75%)  => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        2 ( 0.00%)       0                2 ( 0.00%) 0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_echo_R == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               printf( "Cannot open file.\n");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_echo_G = fopen( "./image_echo_G_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          1 ( 0.07%)     0              0          1 ( 0.08%)     0              0                0            0                1 ( 0.00%) .             f_ID_echo_G = fopen( "./image_echo_G_640_480_02.data", "wb");
+103,931,304 (99.90%) 35,376,249 (99.92%) 26,295,759 (99.95%) 307 (21.90%) 73,135 (98.11%) 76,644 (99.47%) 292 (22.29%) 43,273 (97.73%) 36,539 (99.00%) 7,626,549 (99.75%) 3,185 (54.75%) 3,227,482 (100.0%) 19 (23.75%)  => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        1 ( 0.00%)       0                0          0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_echo_G == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               printf( "Cannot open file.\n");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_echo_B = fopen( "./image_echo_B_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             f_ID_echo_B = fopen( "./image_echo_B_640_480_02.data", "wb");
+103,930,601 (99.90%) 35,376,081 (99.92%) 26,295,609 (99.95%) 307 (21.90%) 73,135 (98.11%) 76,638 (99.47%) 292 (22.29%) 43,273 (97.73%) 36,533 (98.98%) 7,626,469 (99.75%) 3,179 (54.65%) 3,227,480 (100.0%) 19 (23.75%)  => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+       16 ( 0.00%)       0                7 ( 0.00%) 1 ( 0.07%)     0              0          1 ( 0.08%)     0              0                1 ( 0.00%)   .                .          .             if( f_ID_echo_B == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               printf( "Cannot open file.\n");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             for( row=0; row < IMAGE_ROW_SIZE; row++)
+      225 ( 0.00%)       0                0          0              0              0          0              0              0               75 ( 0.00%)   3 ( 0.05%)       .          .             for( col=0; col < IMAGE_COL_SIZE; col++) {
+4,606,136 ( 4.43%) 716,552 ( 2.02%) 307,052 ( 1.17%) 1 ( 0.07%)     0          4,727 ( 6.14%) 1 ( 0.08%)     0          4,726 (12.80%) 102,450 ( 1.34%) 154 ( 2.65%) 614,027 (19.02%) 1 ( 1.25%)      R[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
+6,753,450 ( 6.49%) 2,762,775 ( 7.80%) 2,455,800 ( 9.33%) 1 ( 0.07%)     0          4,800 ( 6.23%) 1 ( 0.08%)     0             64 ( 0.17%) 613,950 ( 8.03%)  10 ( 0.17%)       .          .           => ./libio/./libio/fputc.c:fputc'2 (306,975x)
+5,836,421,865 (5610.0%) 1,955,345,670 (5523.1%) 1,457,279,100 (5539.0%) 17,338 (1236.7%) 5,273,534 (7074.6%) 4,660,425 (6048.7%) 17,338 (1323.5%) 3,240,063 (7317.2%) 2,187,275 (5926.1%) 423,041,895 (5532.9%) 198,227 (3407.7%) 173,204,775 (5366.4%) 451 (563.8%)  => ./libio/./libio/getc.c:getc'2 (307,050x)
+      530 ( 0.00%)     151 ( 0.00%)       2 ( 0.00%) 0              0              0          0              0              0                0            0               76 ( 0.00%) 1 ( 1.25%)      fputc( R[row][col], f_ID_echo_R);
+103,928,748 (99.90%) 35,375,551 (99.92%) 26,295,260 (99.95%) 259 (18.47%) 73,120 (98.09%) 76,629 (99.45%) 259 (19.77%) 43,270 (97.72%) 36,524 (98.96%) 7,626,230 (99.74%) 3,148 (54.12%) 3,227,468 (100.0%) 11 (13.75%)  => ./elf/../sysdeps/aarch64/dl-trampoline.S:_dl_runtime_resolve'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           //
+    1,125 ( 0.00%)     150 ( 0.00%)     150 ( 0.00%) 1 ( 0.07%)     0              1 ( 0.00%) 1 ( 0.08%)     0              1 ( 0.00%)       0            0              150 ( 0.00%) 2 ( 2.50%)      G[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
+103,927,695 (99.90%) 35,375,224 (99.92%) 26,295,085 (99.95%) 246 (17.55%) 73,111 (98.08%) 76,627 (99.45%) 246 (18.78%) 43,263 (97.70%) 36,522 (98.95%) 7,626,079 (99.74%) 3,124 (53.70%) 3,227,461 (100.0%) 7 ( 8.75%)  => ./libio/./libio/fputc.c:fputc'2 (1x)
+       20 ( 0.00%)       9 ( 0.00%)       6 ( 0.00%) 1 ( 0.07%)     1 ( 0.00%)     0          1 ( 0.08%)     0              0                2 ( 0.00%)   1 ( 0.02%)       .          .           => ./libio/./libio/getc.c:getc'2 (1x)
+4,609,005 ( 4.43%) 716,940 ( 2.03%) 307,125 ( 1.17%) 0              0          4,950 ( 6.42%) 0              0          4,950 (13.41%) 102,540 ( 1.34%) 165 ( 2.84%) 614,400 (19.04%) .               fputc( G[row][col], f_ID_echo_G);
+5,818,900,785 (5593.2%) 1,949,096,130 (5505.4%) 1,452,669,225 (5521.5%) 17,337 (1236.6%) 5,273,100 (7074.0%) 4,650,600 (6035.9%) 17,337 (1323.4%) 3,240,000 (7317.1%) 2,182,262 (5912.5%) 421,709,055 (5515.4%) 197,964 (3403.2%) 172,590,150 (5347.3%) 451 (563.8%)  => ./libio/./libio/getc.c:getc'2 (307,200x)
+6,758,400 ( 6.50%) 2,764,800 ( 7.81%) 2,457,600 ( 9.34%) 0              0          4,725 ( 6.13%) 0              0             63 ( 0.17%) 614,400 ( 8.04%)   1 ( 0.02%)       .          .           => ./libio/./libio/fputc.c:fputc'2 (307,200x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           //
+    1,125 ( 0.00%)     150 ( 0.00%)     150 ( 0.00%) 0              0              1 ( 0.00%) 0              0              1 ( 0.00%)       0            0              150 ( 0.00%) .               B[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
+5,847,797,450 (5621.0%) 1,958,829,760 (5532.9%) 1,460,045,049 (5549.6%) 17,340 (1236.8%) 5,273,683 (7074.8%) 4,670,026 (6061.1%) 17,340 (1323.7%) 3,240,063 (7317.2%) 2,192,065 (5939.1%) 423,760,425 (5542.3%) 198,396 (3410.6%) 173,818,952 (5385.4%) 451 (563.8%)  => ./libio/./libio/fputc.c:fputc'2 (75x)
+    1,500 ( 0.00%)     675 ( 0.00%)     450 ( 0.00%) 0              0              0          0              0              0              150 ( 0.00%)   2 ( 0.03%)       .          .           => ./libio/./libio/getc.c:getc'2 (75x)
+4,609,234 ( 4.43%) 716,941 ( 2.03%) 307,127 ( 1.17%) 0              1 ( 0.00%) 4,725 ( 6.13%) 0              1 ( 0.00%) 4,725 (12.80%) 102,615 ( 1.34%) 168 ( 2.89%) 614,401 (19.04%) 1 ( 1.25%)      fputc( B[row][col], f_ID_echo_B);
+5,750,063,151 (5527.0%) 1,926,234,833 (5440.9%) 1,435,603,295 (5456.7%) 17,106 (1220.1%) 5,203,265 (6980.3%) 4,593,550 (5961.9%) 17,106 (1305.8%) 3,196,800 (7219.5%) 2,155,546 (5840.2%) 416,754,871 (5450.7%) 195,461 (3360.2%) 170,592,385 (5285.5%) 445 (556.2%)  => ./libio/./libio/getc.c:getc'2 (307,199x)
+6,758,400 ( 6.50%) 2,764,800 ( 7.81%) 2,457,600 ( 9.34%) 0              0          4,800 ( 6.23%) 0              0             62 ( 0.17%) 614,400 ( 8.04%)   1 ( 0.02%)       .          .           => ./libio/./libio/fputc.c:fputc'2 (307,200x)
+51,313,325 (49.32%) 16,610,406 (46.92%) 12,455,153 (47.34%) 231 (16.48%) 67,509 (90.57%) 47,525 (61.68%) 231 (17.63%) 43,199 (97.56%) 21,929 (59.41%) 3,620,969 (47.36%) 2,249 (38.66%) 1,383,139 (42.85%) 5 ( 6.25%)  => ./elf/../sysdeps/aarch64/dl-trampoline.S:_dl_runtime_resolve'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .             fclose( f_ID_echo_B);
+        6 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) 1 ( 1.25%)    fclose( f_ID_echo_G);
+51,311,901 (49.32%) 16,609,949 (46.92%) 12,454,886 (47.34%) 164 (11.70%) 67,442 (90.48%) 47,511 (61.66%) 164 (12.52%) 43,136 (97.42%) 21,917 (59.38%) 3,620,771 (47.36%) 2,199 (37.80%) 1,383,132 (42.85%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        6 ( 0.00%)       2 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             fclose( f_ID_echo_R);
+51,311,118 (49.32%) 16,609,708 (46.92%) 12,454,721 (47.34%) 164 (11.70%) 67,439 (90.47%) 47,510 (61.66%) 164 (12.52%) 43,135 (97.41%) 21,917 (59.38%) 3,620,670 (47.35%) 2,164 (37.20%) 1,383,126 (42.85%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        6 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             fclose( f_ID_input_RGB);
+51,310,335 (49.32%) 16,609,468 (46.92%) 12,454,556 (47.34%) 164 (11.70%) 67,437 (90.47%) 47,509 (61.66%) 164 (12.52%) 43,134 (97.41%) 21,917 (59.38%) 3,620,569 (47.35%) 2,161 (37.15%) 1,383,120 (42.85%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        1 ( 0.00%)       .                .          .              .              .          .              .              .                .            .                .          .             CSC_RGB_to_YCC();
+4,305,144 ( 4.14%) 921,606 ( 2.60%) 460,800 ( 1.75%) 8 ( 0.57%) 28,463 (38.18%) 16,615 (21.56%) 8 ( 0.61%) 14,402 (32.52%) 7,203 (19.52%)  77,040 ( 1.01%) 263 ( 4.52%)       .          .           => /home/student/SENG440-Project/C/CSC_RGB_to_YCC_01.c:CSC_RGB_to_YCC (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_output_Y = fopen( "./image_output_Y_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          1 ( 0.07%)     1 ( 0.00%)     0          1 ( 0.08%)     1 ( 0.00%)     0                0            0                1 ( 0.00%) .             f_ID_output_Y = fopen( "./image_output_Y_640_480_02.data", "wb");
+47,004,512 (45.18%) 15,687,649 (44.31%) 11,993,612 (45.59%) 152 (10.84%) 38,971 (52.28%) 30,893 (40.10%) 152 (11.60%) 28,730 (64.88%) 14,713 (39.86%) 3,543,440 (46.34%) 1,890 (32.49%) 1,383,115 (42.85%) .           => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        1 ( 0.00%)       0                0          0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_output_Y == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               fprintf( stderr, "Could not open %s\n", 
+        .                .                .          .              .              .          .              .              .                .            .                .          .                        "./image_output_Y_640_480_02.data");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .             
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_output_Cb = fopen( "./image_output_Cb_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             f_ID_output_Cb = fopen( "./image_output_Cb_640_480_02.data", "wb");
+47,003,956 (45.18%) 15,687,510 (44.31%) 11,993,474 (45.59%) 125 ( 8.92%) 38,955 (52.26%) 30,880 (40.08%) 125 ( 9.54%) 28,714 (64.85%) 14,700 (39.83%) 3,543,385 (46.34%) 1,887 (32.44%) 1,383,113 (42.85%) .           => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        1 ( 0.00%)       0                0          0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_output_Cb == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               fprintf( stderr, "Could not open %s\n", 
+        .                .                .          .              .              .          .              .              .                .            .                .          .                        "./image_output_Cb_640_480_02.data");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .             
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_output_Cr = fopen( "./image_output_Cr_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          1 ( 0.07%)     0              0          1 ( 0.08%)     0              0                0            0                1 ( 0.00%) .             f_ID_output_Cr = fopen( "./image_output_Cr_640_480_02.data", "wb");
+47,003,400 (45.18%) 15,687,371 (44.31%) 11,993,336 (45.59%) 125 ( 8.92%) 38,954 (52.26%) 30,874 (40.07%) 125 ( 9.54%) 28,713 (64.84%) 14,694 (39.81%) 3,543,330 (46.34%) 1,886 (32.42%) 1,383,111 (42.85%) .           => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        6 ( 0.00%)       0                0          0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_output_Cr == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               fprintf( stderr, "Could not open %s\n", 
+        .                .                .          .              .              .          .              .              .                .            .                .          .                        "./image_output_Cr_640_480_02.data");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .             
+        .                .                .          .              .              .          .              .              .                .            .                .          .             for( row=0; row < IMAGE_ROW_SIZE; row++)
+      151 ( 0.00%)       0                0          0              0              0          0              0              0               75 ( 0.00%)   3 ( 0.05%)       .          .             for( col=0; col < IMAGE_COL_SIZE; col++) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               //fprintf( f_ID_output_Y, "%02hhx", Y[row][col]);
+2,766,583 ( 2.66%) 614,402 ( 1.74%)       0          1 ( 0.07%) 4,801 ( 6.44%)     0          1 ( 0.08%) 4,801 (10.84%)     0          307,605 ( 4.02%) 489 ( 8.41%) 307,201 ( 9.52%) .               fputc( Y[row][col], f_ID_output_Y);
+3,169,468,479 (3046.5%) 1,050,739,950 (2967.9%) 808,459,350 (3072.9%) 7,428 (529.8%) 2,738,474 (3673.7%) 2,310,213 (2998.4%) 7,428 (567.0%) 1,970,399 (4449.9%) 1,096,713 (2971.4%) 231,247,365 (3024.4%) 118,323 (2034.1%) 92,053,725 (2852.1%) .           => ./libio/./libio/fputc.c:fputc'2 (307,200x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             for( row=0; row < (IMAGE_ROW_SIZE >> 1); row++)
+       57 ( 0.00%)       0                0          0              0              0          0              0              0               19 ( 0.00%)   3 ( 0.05%)       .          .             for( col=0; col < (IMAGE_COL_SIZE >> 1); col++) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               //fprintf( f_ID_output_Cb, "%02hhx", Cb[row][col]);
+1,306,608 ( 1.26%) 307,161 ( 0.87%)       0          1 ( 0.07%) 2,400 ( 3.22%)     0          1 ( 0.08%) 2,399 ( 5.42%)     0           77,021 ( 1.01%) 247 ( 4.25%) 153,581 ( 4.76%) .               fputc( Cb[row][col], f_ID_output_Cb);
+634,914,541 (610.3%) 207,423,936 (585.9%) 161,603,780 (614.2%) 1,746 (124.5%) 591,084 (793.0%) 546,823 (709.7%) 1,746 (133.3%) 407,885 (921.1%) 260,878 (706.8%) 43,940,453 (574.7%) 20,630 (354.7%) 17,962,038 (556.5%) .           => ./libio/./libio/fputc.c:fputc'2 (153,580x)
+32,770,030 (31.50%) 10,612,210 (29.98%) 8,302,884 (31.56%) 97 ( 6.92%) 31,578 (42.36%) 29,976 (38.91%) 97 ( 7.40%) 21,477 (48.50%) 14,486 (39.25%) 2,234,040 (29.22%) 1,015 (17.45%) 922,077 (28.57%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .               //fprintf( f_ID_output_Cr, "%02hhx", Cr[row][col]);
+      133 ( 0.00%)      38 ( 0.00%)       0          0              1 ( 0.00%)     0          0              1 ( 0.00%)     0                0            0               19 ( 0.00%) .               fputc( Cr[row][col], f_ID_output_Cr);
+668,995,392 (643.0%) 218,344,544 (616.7%) 169,907,486 (645.8%) 1,844 (131.5%) 625,102 (838.6%) 576,801 (748.6%) 1,844 (140.8%) 431,765 (975.1%) 275,366 (746.1%) 46,252,076 (604.9%) 21,903 (376.5%) 19,037,736 (589.8%) .           => ./libio/./libio/fputc.c:fputc'2 (19x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             fclose( f_ID_output_Cr);
+        6 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             fclose( f_ID_output_Cb);
+32,769,247 (31.50%) 10,611,970 (29.97%) 8,302,719 (31.56%) 69 ( 4.92%) 31,552 (42.33%) 29,973 (38.90%) 69 ( 5.27%) 21,466 (48.48%) 14,486 (39.25%) 2,233,939 (29.22%) 1,012 (17.40%) 922,071 (28.57%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        6 ( 0.00%)       1 ( 0.00%)       0          0              0              0          0              0              0                0            0                1 ( 0.00%) .             fclose( f_ID_output_Y);
+32,768,464 (31.50%) 10,611,730 (29.97%) 8,302,554 (31.56%) 69 ( 4.92%) 31,550 (42.33%) 29,972 (38.90%) 69 ( 5.27%) 21,465 (48.48%) 14,485 (39.25%) 2,233,838 (29.22%) 1,011 (17.38%) 922,065 (28.57%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        1 ( 0.00%)       .                .          .              .              .          .              .              .                .            .                .          .             CSC_YCC_to_RGB();
+5,072,659 ( 4.88%) 460,806 ( 1.30%) 921,600 ( 3.50%) 6 ( 0.43%) 16,614 (22.29%) 28,464 (36.94%) 6 ( 0.46%) 7,009 (15.83%) 14,402 (39.02%)  77,040 ( 1.01%) 263 ( 4.52%)       .          .           => /home/student/SENG440-Project/C/CSC_YCC_to_RGB_01.c:CSC_YCC_to_RGB (1x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             //f_ID_output_RGB = fopen( "./image_output_RGB_64_48_03.data", "wb");
+       10 ( 0.00%)       1 ( 0.00%)       0          1 ( 0.07%)     1 ( 0.00%)     0          1 ( 0.08%)     1 ( 0.00%)     0                0            0                1 ( 0.00%) .             f_ID_output_RGB = fopen( "./image_output_RGB_640_480_02.data", "wb");
+27,694,988 (26.62%) 10,150,672 (28.67%) 7,380,783 (28.05%) 61 ( 4.35%) 14,929 (20.03%) 1,507 ( 1.96%) 61 ( 4.66%) 14,449 (32.63%)    82 ( 0.22%) 2,156,694 (28.21%) 744 (12.79%) 922,059 (28.57%) .           => ./libio/./libio/iofopen.c:fopen@@GLIBC_2.17'2 (1x)
+        1 ( 0.00%)       0                0          0              0              0          0              0              0                1 ( 0.00%)   .                .          .             if( f_ID_output_RGB == NULL) {
+        .                .                .          .              .              .          .              .              .                .            .                .          .               printf( "Cannot open file.\n");
+        .                .                .          .              .              .          .              .              .                .            .                .          .               return( 1);
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        .                .                .          .              .              .          .              .              .                .            .                .          .             for( row=0; row < IMAGE_ROW_SIZE; row++)
+      225 ( 0.00%)       0                0          0              0              0          0              0              0               75 ( 0.00%)   2 ( 0.03%)       .          .             for( col=0; col < IMAGE_COL_SIZE; col++) {
+2,458,685 ( 2.36%) 614,566 ( 1.74%)       0          0          4,725 ( 6.34%)     0          0          4,725 (10.67%)     0          102,540 ( 1.34%) 166 ( 2.85%) 307,201 ( 9.52%) .               fputc( R[row][col], f_ID_output_RGB);
+1,031,474,217 (991.5%) 378,342,053 (1068.7%) 275,546,304 (1047.3%) 1,628 (116.1%) 552,410 (741.1%) 53,622 (69.59%) 1,628 (124.3%) 534,502 (1207.1%)   222 ( 0.60%) 80,412,661 (1051.7%) 26,493 (455.4%) 34,116,220 (1057.0%) .           => ./libio/./libio/fputc.c:fputc'2 (307,199x)
+      815 ( 0.00%)     263 ( 0.00%)     171 ( 0.00%) 22 ( 1.57%)    25 ( 0.03%)     3 ( 0.00%) 22 ( 1.68%)    23 ( 0.05%)     3 ( 0.01%)     104 ( 0.00%)   4 ( 0.07%)       5 ( 0.00%) .           => ./libio/./libio/iofclose.c:fclose@@GLIBC_2.17'2 (1x)
+2,458,575 ( 2.36%) 614,550 ( 1.74%)       0          1 ( 0.07%) 4,726 ( 6.34%)     0          1 ( 0.08%) 4,726 (10.67%)     0          102,525 ( 1.34%) 156 ( 2.68%) 307,200 ( 9.52%) .               fputc( G[row][col], f_ID_output_RGB);
+1,049,937,465 (1009.2%) 385,109,145 (1087.8%) 280,466,775 (1066.0%) 1,652 (117.8%) 562,440 (754.5%) 54,438 (70.65%) 1,652 (126.1%) 544,200 (1229.0%)   288 ( 0.78%) 81,850,470 (1070.5%) 27,004 (464.2%) 34,730,925 (1076.1%) .           => ./libio/./libio/fputc.c:fputc'2 (307,200x)
+2,458,680 ( 2.36%) 614,565 ( 1.74%)       0          0          4,980 ( 6.68%)     0          0          4,950 (11.18%)     0          102,540 ( 1.34%) 166 ( 2.85%) 307,200 ( 9.52%) .               fputc( B[row][col], f_ID_output_RGB);
+1,040,706,360 (1000.3%) 381,725,730 (1078.2%) 278,006,625 (1056.7%) 1,650 (117.7%) 557,460 (747.8%) 54,000 (70.09%) 1,650 (126.0%) 539,250 (1217.8%)   225 ( 0.61%) 81,131,655 (1061.1%) 26,747 (459.8%) 34,423,575 (1066.5%) .           => ./libio/./libio/fputc.c:fputc'2 (307,200x)
+        .                .                .          .              .              .          .              .              .                .            .                .          .             }
+        6 ( 0.00%)      10 ( 0.00%)       0          0              1 ( 0.00%)     0          0              1 ( 0.00%)     .                .            .                .          .             fclose( f_ID_output_RGB);
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+        2 ( 0.00%)       2 ( 0.00%)       .          .              .              .          .              .              .                .            .                .          .           } // END of main()
+        .                .                .          .              .              .          .              .              .                .            .                .          .           
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: CSC_RGB_to_YCC_01.c
+--------------------------------------------------------------------------------
+Ir               Dr               Dw              I1mr       D1mr           D1mw           ILmr       DLmr           DLmw           Bc              Bcm          Bi Bim 
+
+-- line 115 ----------------------------------------
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .           // =======
+      .                .               .          .              .              .          .              .              .               .            .          .          .           static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //
+      .                .               .          .              .              .          .              .              .               .            .          .          .             // Lane order for every vector below is [00, 01, 10, 11], i.e. the
+      .                .               .          .              .              .          .              .              .               .            .          .          .             // 4 pixels of this one 2x2 block -- same layout/order as the
+      .                .               .          .              .              .          .              .              .               .            .          .          .             // pre-NEON xx_pixel_00..xx_pixel_11 scalars.
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+460,800 ( 0.44%) 153,600 ( 0.43%)      0          0          4,499 ( 6.04%)     0          0          2,160 ( 4.88%)     .               .            .          .          .             const int16_t r_in[4] = { (int16_t)R[row+0][col+0], (int16_t)R[row+0][col+1],
+153,600 ( 0.15%) 153,600 ( 0.43%)      0          0          4,988 ( 6.69%)     0          0          2,640 ( 5.96%)     .               .            .          .          .                                        (int16_t)R[row+1][col+0], (int16_t)R[row+1][col+1] };
+460,800 ( 0.44%) 153,600 ( 0.43%)      0          1 ( 0.07%) 4,499 ( 6.04%)     0          1 ( 0.08%) 2,160 ( 4.88%)     .               .            .          .          .             const int16_t g_in[4] = { (int16_t)G[row+0][col+0], (int16_t)G[row+0][col+1],
+153,600 ( 0.15%) 153,600 ( 0.43%)      0          0          4,988 ( 6.69%)     0          0          2,640 ( 5.96%)     .               .            .          .          .                                        (int16_t)G[row+1][col+0], (int16_t)G[row+1][col+1] };
+460,800 ( 0.44%) 153,600 ( 0.43%)      0          0          4,500 ( 6.04%)     0          0          2,161 ( 4.88%)     .               .            .          .          .             const int16_t b_in[4] = { (int16_t)B[row+0][col+0], (int16_t)B[row+0][col+1],
+153,600 ( 0.15%) 153,600 ( 0.43%)      0          0          4,988 ( 6.69%)     0          0          2,640 ( 5.96%)     .               .            .          .          .                                        (int16_t)B[row+1][col+0], (int16_t)B[row+1][col+1] };
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t r_pixel = vld1_s16( r_in);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t g_pixel = vld1_s16( g_in);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t b_pixel = vld1_s16( b_in);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .             // Y   = BIAS_LUMA   + C11*R + C12*G + C13*B
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int32x4_t y_acc = vdupq_n_s32( BIAS_LUMA);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             y_acc = neon_mac( y_acc, r_pixel, C11);
+-- line 136 ----------------------------------------
+-- line 152 ----------------------------------------
+      .                .               .          .              .              .          .              .              .               .            .          .          .             cr_acc = neon_mls( cr_acc, b_pixel, C33);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int16x4_t cr_pixel = neon_finish( cr_acc);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int16_t y_out[4], cb_out[4], cr_out[4];
+      .                .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( y_out,  y_pixel);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( cb_out, cb_pixel);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             vst1_s16( cr_out, cr_pixel);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+ 76,800 ( 0.07%)       0          76,800 ( 0.29%) 0              0          4,500 ( 5.84%) 0              0          2,161 ( 5.85%)      .            .          .          .             Y[row+0][col+0] = (uint8_t)y_out[0];
+153,600 ( 0.15%)       0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             Y[row+0][col+1] = (uint8_t)y_out[1];
+153,600 ( 0.15%)       0          76,800 ( 0.29%) 0              0          4,988 ( 6.47%) 0              0          2,640 ( 7.15%)      .            .          .          .             Y[row+1][col+0] = (uint8_t)y_out[2];
+153,600 ( 0.15%)       0          76,800 ( 0.29%) .              .              .          .              .              .               .            .          .          .             Y[row+1][col+1] = (uint8_t)y_out[3];
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+155,762 ( 0.15%)       1 ( 0.00%) 76,800 ( 0.29%) 1 ( 0.07%)     0          3,564 ( 4.63%) 1 ( 0.08%)     0          1,201 ( 3.25%)      .            .          .          .             Cb[row>>1][col>>1] = chrominance_downsample( (uint8_t)cb_out[0],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cb_out[1],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cb_out[2],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cb_out[3]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+ 77,042 ( 0.07%)       1 ( 0.00%) 76,800 ( 0.29%) 1 ( 0.07%)     0          3,563 ( 4.62%) 1 ( 0.08%)     0          1,201 ( 3.25%)      .            .          .          .             Cr[row>>1][col>>1] = chrominance_downsample( (uint8_t)cr_out[0],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cr_out[1],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cr_out[2],
+      .                .               .          .              .              .          .              .              .               .            .          .          .                                                          (uint8_t)cr_out[3]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           } // END of CSC_RGB_to_YCC_brute_force_int()
+      .                .               .          .              .              .          .              .              .               .            .          .          .           #endif // RGB_to_YCC_ROUTINE == 2
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .           // =======
+      .                .               .          .              .              .          .              .              .               .            .          .          .           static inline uint8_t chrominance_downsample(
+-- line 178 ----------------------------------------
+-- line 196 ----------------------------------------
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 return( 0);
+      .                .               .          .              .              .          .              .              .               .            .          .          .             }
+      .                .               .          .              .              .          .              .              .               .            .          .          .           } // END of chrominance_downsample()
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      .                .               .          .              .              .          .              .              .               .            .          .          .           // =======
+      .                .               .          .              .              .          .              .              .               .            .          .          .           void CSC_RGB_to_YCC( void) {
+      .                .               .          .              .              .          .              .              .               .            .          .          .             int row, col; // indices for row and column
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //
+  1,689 ( 0.00%)       4 ( 0.00%)      0          2 ( 0.14%)     1 ( 0.00%)     0          2 ( 0.15%)     1 ( 0.00%)     0             240 ( 0.00%)   3 ( 0.05%) .          .             for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
+537,840 ( 0.52%)       0               0          0              0              0          0              0              0          76,800 ( 1.00%) 260 ( 4.47%) .          .               for( col=0; col<IMAGE_COL_SIZE; col+=2) {
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 //printf( "\n[row,col] = [%02i,%02i]\n\n", row, col);
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 // Preprocessor dispatch on the compile-time RGB_to_YCC_ROUTINE.
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 // No runtime switch, no branch per iteration; the unselected
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 // call site is not emitted at all.
+      .                .               .          .              .              .          .              .              .               .            .          .          .           #if RGB_to_YCC_ROUTINE == 1
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 CSC_RGB_to_YCC_brute_force_float( row, col);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           #elif RGB_to_YCC_ROUTINE == 2
+      .                .               .          .              .              .          .              .              .               .            .          .          .                 CSC_RGB_to_YCC_brute_force_int( row, col);
+-- line 213 ----------------------------------------
+-- line 214 ----------------------------------------
+      .                .               .          .              .              .          .              .              .               .            .          .          .           #endif
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //      printf( "Luma_00  = %02hhx\n", Y[row+0][col+0]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //      printf( "Luma_01  = %02hhx\n", Y[row+0][col+1]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //      printf( "Luma_10  = %02hhx\n", Y[row+1][col+0]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .           //      printf( "Luma_11  = %02hhx\n\n", Y[row+1][col+1]);
+      .                .               .          .              .              .          .              .              .               .            .          .          .               }
+      .                .               .          .              .              .          .              .              .               .            .          .          .             }
+      .                .               .          .              .              .          .              .              .               .            .          .          .           
+      1 ( 0.00%)       0               0          1 ( 0.07%)     0              0          1 ( 0.08%)     .              .               .            .          .          .           } // END of CSC_RGB_to_YCC()
+--------------------------------------------------------------------------------
+The following files chosen for auto-annotation could not be found:
+--------------------------------------------------------------------------------
+  ./libio/./libio/fputc.c
+  ./libio/./libio/getc.c
+
+--------------------------------------------------------------------------------
+Ir                  Dr                 Dw                 I1mr        D1mr            D1mw            ILmr        DLmr            DLmw            Bc                 Bcm            Bi                 Bim        
+--------------------------------------------------------------------------------
+34,655,038 (33.31%) 6,298,605 (17.79%) 2,304,022 ( 8.76%) 27 ( 1.93%) 66,714 (89.50%) 59,483 (77.20%) 26 ( 1.98%) 43,017 (97.15%) 36,008 (97.56%) 1,154,168 (15.10%) 2,248 (38.65%) 3,225,620 (99.94%) 8 (10.00%)  events annotated
+

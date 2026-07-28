@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include "CSC_global.h"
 
+#if YCC_to_RGB_ROUTINE == 2
+#include <arm_neon.h>
+#endif
+
 // private data
 
 // private prototypes / definitions
@@ -124,143 +128,87 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col,
 #if YCC_to_RGB_ROUTINE == 2
 // =======
 static inline uint8_t saturation_int( int argument) {
-  // Branchless clamp to [0, 255].
-  // Ternaries let the compiler emit predicated moves (CSEL on
-  // AArch64, USAT or conditional MOV on ARMv5/v7) instead of a
-  // conditional branch, avoiding pipeline stalls on misprediction.
-  // In the NEON path this scalar clamp is replaced entirely by
-  // SQXTUN (saturating narrow) as a free byproduct of packing.
+  // Branchless clamp to [0, 255]. Not called from the NEON path below
+  // (that path never clamped -- see neon_finish()'s note); kept here
+  // unused, same as it was before vectorization.
   argument = (argument > 255) ? 255 : argument;
   argument = (argument < 0)   ? 0   : argument;
   return( (uint8_t)argument);
 } // END of saturation_int()
+
+// NEON helpers for CSC_YCC_to_RGB_brute_force_int() below. Each takes
+// and returns a single named vector value (never an array of vector
+// types looped over), so GCC keeps every intermediate in a register.
+static inline int32x4_t neon_mac( int32x4_t acc, int16x4_t v, int16_t coeff) {
+  return( vmlal_n_s16( acc, v, coeff));
+} // END of neon_mac()
+
+static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
+  return( vmlsl_n_s16( acc, v, coeff));
+} // END of neon_mls()
+
+// Rounding-shift-right by K folded with a plain truncating narrow --
+// vrshrn_n_s32 does the "+= ROUND_K; >>= K" rounding step and the
+// narrow to 16-bit in one instruction. Not saturating, same as the
+// (uint8_t) cast this routine has always used (no clamp).
+static inline int16x4_t neon_finish( int32x4_t acc) {
+  return( vrshrn_n_s32( acc, K));
+} // END of neon_finish()
 
 // =======
 static void CSC_YCC_to_RGB_brute_force_int( int row, int col,
     uint8_t cb_00, uint8_t cb_01, uint8_t cb_10, uint8_t cb_11,
     uint8_t cr_00, uint8_t cr_01, uint8_t cr_10, uint8_t cr_11) {
 //
-  int R_pixel_00, R_pixel_01, R_pixel_10, R_pixel_11;
-  int G_pixel_00, G_pixel_01, G_pixel_10, G_pixel_11;
-  int B_pixel_00, B_pixel_01, B_pixel_10, B_pixel_11;
+  // Chroma values come in as parameters (upsampled on the fly by the
+  // caller). Layout: xx_00 = source, xx_01 = top-neighbor,
+  // xx_10 = left-neighbor, xx_11 = middle (diagonal) -- same as
+  // before vectorization. Lane order for every vector below is
+  // [00, 01, 10, 11], i.e. the 4 pixels of this one 2x2 block.
 
-  int  Y_pixel_00,  Y_pixel_01,  Y_pixel_10,  Y_pixel_11;
-  int Cb_pixel_00, Cb_pixel_01, Cb_pixel_10, Cb_pixel_11;
-  int Cr_pixel_00, Cr_pixel_01, Cr_pixel_10, Cr_pixel_11;
+  const int16_t y_bias[4]  = { (int16_t)Y[row+0][col+0] - 16,
+                                (int16_t)Y[row+0][col+1] - 16,
+                                (int16_t)Y[row+1][col+0] - 16,
+                                (int16_t)Y[row+1][col+1] - 16 };
+  const int16_t cb_bias[4] = { (int16_t)cb_00 - 128, (int16_t)cb_01 - 128,
+                                (int16_t)cb_10 - 128, (int16_t)cb_11 - 128 };
+  const int16_t cr_bias[4] = { (int16_t)cr_00 - 128, (int16_t)cr_01 - 128,
+                                (int16_t)cr_10 - 128, (int16_t)cr_11 - 128 };
 
-  // Common subexpression: D1 * Y_pixel_XX is reused across
-  // R, G, and B channel calculations for each of the 4 pixels.
-  int luma_00, luma_01, luma_10, luma_11;
+  int16x4_t y_pixel  = vld1_s16( y_bias);
+  int16x4_t cb_pixel = vld1_s16( cb_bias);
+  int16x4_t cr_pixel = vld1_s16( cr_bias);
 
-  // Chroma values now come in as parameters (upsampled on the fly by
-  // the caller). Layout: xx_00 = source, xx_01 = top-neighbor,
-  // xx_10 = left-neighbor, xx_11 = middle (diagonal).
+  // CSE, vectorized: D1*Y computed once and reused across R, G, and B
+  // -- one vector multiply covers all 4 pixels of the block instead
+  // of the 4 separate scalar multiplies the pre-NEON luma_00..luma_11
+  // terms used.
+  int32x4_t luma = vmull_n_s16( y_pixel, D1);
 
-  Y_pixel_00 = (int)Y[row+0][col+0];
-  Y_pixel_01 = (int)Y[row+0][col+1];
-  Y_pixel_10 = (int)Y[row+1][col+0];
-  Y_pixel_11 = (int)Y[row+1][col+1];
+  int16x4_t R_pixel = neon_finish( neon_mac( luma, cr_pixel, D2));
+  int16x4_t G_pixel = neon_finish( neon_mls( neon_mls( luma, cr_pixel, D3),
+                                              cb_pixel, D4));
+  int16x4_t B_pixel = neon_finish( neon_mac( luma, cb_pixel, D5));
 
-  Cb_pixel_00 = (int)cb_00;
-  Cb_pixel_01 = (int)cb_01;
-  Cb_pixel_10 = (int)cb_10;
-  Cb_pixel_11 = (int)cb_11;
+  int16_t R_out[4], G_out[4], B_out[4];
+  vst1_s16( R_out, R_pixel);
+  vst1_s16( G_out, G_pixel);
+  vst1_s16( B_out, B_pixel);
 
-  Cr_pixel_00 = (int)cr_00;
-  Cr_pixel_01 = (int)cr_01;
-  Cr_pixel_10 = (int)cr_10;
-  Cr_pixel_11 = (int)cr_11;
+  R[row+0][col+0] = (uint8_t)R_out[0];
+  R[row+0][col+1] = (uint8_t)R_out[1];
+  R[row+1][col+0] = (uint8_t)R_out[2];
+  R[row+1][col+1] = (uint8_t)R_out[3];
 
-  Y_pixel_00 = Y_pixel_00 - 16;
-  Y_pixel_01 = Y_pixel_01 - 16;
-  Y_pixel_10 = Y_pixel_10 - 16;
-  Y_pixel_11 = Y_pixel_11 - 16;
+  G[row+0][col+0] = (uint8_t)G_out[0];
+  G[row+0][col+1] = (uint8_t)G_out[1];
+  G[row+1][col+0] = (uint8_t)G_out[2];
+  G[row+1][col+1] = (uint8_t)G_out[3];
 
-  Cb_pixel_00 = Cb_pixel_00 - 128;
-  Cb_pixel_01 = Cb_pixel_01 - 128;
-  Cb_pixel_10 = Cb_pixel_10 - 128;
-  Cb_pixel_11 = Cb_pixel_11 - 128;
-
-  Cr_pixel_00 = Cr_pixel_00 - 128;
-  Cr_pixel_01 = Cr_pixel_01 - 128;
-  Cr_pixel_10 = Cr_pixel_10 - 128;
-  Cr_pixel_11 = Cr_pixel_11 - 128;
-
-  // CSE: compute the luma term (D1 * Y_pixel_XX) once per pixel and
-  // reuse it across the R, G, and B channel calculations below.
-  // This eliminates 8 redundant multiplications per 2x2 block
-  // (originally 3 D1*Y products per pixel x 4 pixels = 12; now 4).
-  luma_00 = D1 * Y_pixel_00;
-  luma_01 = D1 * Y_pixel_01;
-  luma_10 = D1 * Y_pixel_10;
-  luma_11 = D1 * Y_pixel_11;
-
-  R_pixel_00 = luma_00 + D2 * Cr_pixel_00;
-  R_pixel_00 += ROUND_K; // rounding
-  R_pixel_00 = R_pixel_00 >> K;
-
-  R_pixel_01 = luma_01 + D2 * Cr_pixel_01;
-  R_pixel_01 += ROUND_K; // rounding
-  R_pixel_01 = R_pixel_01 >> K;
-
-  R_pixel_10 = luma_10 + D2 * Cr_pixel_10;
-  R_pixel_10 += ROUND_K; // rounding
-  R_pixel_10 = R_pixel_10 >> K;
-
-  R_pixel_11 = luma_11 + D2 * Cr_pixel_11;
-  R_pixel_11 += ROUND_K; // rounding
-  R_pixel_11 = R_pixel_11 >> K;
-
-  R[row+0][col+0] = (uint8_t)R_pixel_00;
-  R[row+0][col+1] = (uint8_t)R_pixel_01;
-  R[row+1][col+0] = (uint8_t)R_pixel_10;
-  R[row+1][col+1] = (uint8_t)R_pixel_11;
-
-  G_pixel_00 = luma_00 - D3 * Cr_pixel_00
-                       - D4 * Cb_pixel_00;
-  G_pixel_00 += ROUND_K; // rounding
-  G_pixel_00 = G_pixel_00 >> K;
-
-  G_pixel_01 = luma_01 - D3 * Cr_pixel_01
-                       - D4 * Cb_pixel_01;
-  G_pixel_01 += ROUND_K; // rounding
-  G_pixel_01 = G_pixel_01 >> K;
-
-  G_pixel_10 = luma_10 - D3 * Cr_pixel_10
-                       - D4 * Cb_pixel_10;
-  G_pixel_10 += ROUND_K; // rounding
-  G_pixel_10 = G_pixel_10 >> K;
-
-  G_pixel_11 = luma_11 - D3 * Cr_pixel_11
-                       - D4 * Cb_pixel_11;
-  G_pixel_11 += ROUND_K; // rounding
-  G_pixel_11 = G_pixel_11 >> K;
-
-  G[row+0][col+0] = (uint8_t)G_pixel_00;
-  G[row+0][col+1] = (uint8_t)G_pixel_01;
-  G[row+1][col+0] = (uint8_t)G_pixel_10;
-  G[row+1][col+1] = (uint8_t)G_pixel_11;
-
-  B_pixel_00 = luma_00 + D5 * Cb_pixel_00;
-  B_pixel_00 += ROUND_K; // rounding
-  B_pixel_00 = B_pixel_00 >> K;
-
-  B_pixel_01 = luma_01 + D5 * Cb_pixel_01;
-  B_pixel_01 += ROUND_K; // rounding
-  B_pixel_01 = B_pixel_01 >> K;
-
-  B_pixel_10 = luma_10 + D5 * Cb_pixel_10;
-  B_pixel_10 += ROUND_K; // rounding
-  B_pixel_10 = B_pixel_10 >> K;
-
-  B_pixel_11 = luma_11 + D5 * Cb_pixel_11;
-  B_pixel_11 += ROUND_K; // rounding
-  B_pixel_11 = B_pixel_11 >> K;
-
-  B[row+0][col+0] = (uint8_t)B_pixel_00;
-  B[row+0][col+1] = (uint8_t)B_pixel_01;
-  B[row+1][col+0] = (uint8_t)B_pixel_10;
-  B[row+1][col+1] = (uint8_t)B_pixel_11;
+  B[row+0][col+0] = (uint8_t)B_out[0];
+  B[row+0][col+1] = (uint8_t)B_out[1];
+  B[row+1][col+0] = (uint8_t)B_out[2];
+  B[row+1][col+1] = (uint8_t)B_out[3];
 
 } // END of CSC_YCC_to_RGB_brute_force_int()
 #endif // YCC_to_RGB_ROUTINE == 2
