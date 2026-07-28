@@ -19,10 +19,10 @@
 
 #if RGB_to_YCC_ROUTINE == 1
 // =======
-static void CSC_RGB_to_YCC_brute_force_float( int row, int col);
+static void CSC_RGB_to_YCC_brute_force_float( unsigned int row, unsigned int col);
 #elif RGB_to_YCC_ROUTINE == 2
 // =======
-static void CSC_RGB_to_YCC_brute_force_int( int row, int col);
+static void CSC_RGB_to_YCC_brute_force_int( unsigned int row, unsigned int col);
 #endif
 
 // =======
@@ -34,7 +34,7 @@ static inline uint8_t chrominance_downsample(
 
 #if RGB_to_YCC_ROUTINE == 1
 // =======
-static void CSC_RGB_to_YCC_brute_force_float( int row, int col) {
+static void CSC_RGB_to_YCC_brute_force_float( unsigned int row, unsigned int col) {
 //
   uint8_t Cb_pixel_00, Cb_pixel_01;
   uint8_t Cb_pixel_10, Cb_pixel_11;
@@ -114,7 +114,7 @@ static inline int16x4_t neon_finish( int32x4_t acc) {
 } // END of neon_finish()
 
 // =======
-static void CSC_RGB_to_YCC_brute_force_int( int row, int col) {
+static void CSC_RGB_to_YCC_brute_force_int( unsigned int row, unsigned int col) {
 //
   // Lane order for every vector below is [00, 01, 10, 11], i.e. the
   // 4 pixels of this one 2x2 block -- same layout/order as the
@@ -199,7 +199,7 @@ static inline uint8_t chrominance_downsample(
 
 // =======
 void CSC_RGB_to_YCC( void) {
-  int row, col; // indices for row and column
+  unsigned int row, col; // indices for row and column
 //
   for( row=0; row<IMAGE_ROW_SIZE; row+=2) {
     // Loop unrolled by UNROLL_FACTOR: each iteration processes

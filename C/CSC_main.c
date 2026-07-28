@@ -12,7 +12,7 @@
 #include "CSC_global.h"
 
 int main( void) {
-  int row, col;
+  unsigned int row, col;
   FILE *f_ID_input_RGB;
   FILE *f_ID_echo_R;
   FILE *f_ID_echo_G;
@@ -51,16 +51,40 @@ int main( void) {
     return( 1);
   }
 
+  // Loop unrolled by UNROLL_FACTOR: each iteration processes
+  // UNROLL_FACTOR consecutive columns instead of one, cutting the
+  // col compare+increment+branch overhead by that factor. IMAGE_COL_SIZE
+  // is a multiple of UNROLL_FACTOR (enforced in CSC_global.h), so no
+  // remainder loop is needed.
   for( row=0; row < IMAGE_ROW_SIZE; row++)
-  for( col=0; col < IMAGE_COL_SIZE; col++) {
-    R[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
-    fputc( R[row][col], f_ID_echo_R);
-//
-    G[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
-    fputc( G[row][col], f_ID_echo_G);
-//
-    B[row][col] = (uint8_t)( fgetc( f_ID_input_RGB));
-    fputc( B[row][col], f_ID_echo_B);
+  for( col=0; col < IMAGE_COL_SIZE; col+=UNROLL_FACTOR) {
+    R[row][col+0] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( R[row][col+0], f_ID_echo_R);
+    G[row][col+0] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( G[row][col+0], f_ID_echo_G);
+    B[row][col+0] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( B[row][col+0], f_ID_echo_B);
+
+    R[row][col+1] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( R[row][col+1], f_ID_echo_R);
+    G[row][col+1] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( G[row][col+1], f_ID_echo_G);
+    B[row][col+1] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( B[row][col+1], f_ID_echo_B);
+
+    R[row][col+2] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( R[row][col+2], f_ID_echo_R);
+    G[row][col+2] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( G[row][col+2], f_ID_echo_G);
+    B[row][col+2] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( B[row][col+2], f_ID_echo_B);
+
+    R[row][col+3] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( R[row][col+3], f_ID_echo_R);
+    G[row][col+3] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( G[row][col+3], f_ID_echo_G);
+    B[row][col+3] = (uint8_t)( fgetc( f_ID_input_RGB));
+    fputc( B[row][col+3], f_ID_echo_B);
   }
   fclose( f_ID_echo_B);
   fclose( f_ID_echo_G);
@@ -94,17 +118,29 @@ int main( void) {
   }
   
   for( row=0; row < IMAGE_ROW_SIZE; row++)
-  for( col=0; col < IMAGE_COL_SIZE; col++) {
+  for( col=0; col < IMAGE_COL_SIZE; col+=UNROLL_FACTOR) {
     //fprintf( f_ID_output_Y, "%02hhx", Y[row][col]);
-    fputc( Y[row][col], f_ID_output_Y);
+    fputc( Y[row][col+0], f_ID_output_Y);
+    fputc( Y[row][col+1], f_ID_output_Y);
+    fputc( Y[row][col+2], f_ID_output_Y);
+    fputc( Y[row][col+3], f_ID_output_Y);
   }
 
+  // (IMAGE_COL_SIZE >> 1) is a multiple of UNROLL_FACTOR too, since
+  // IMAGE_COL_SIZE is a multiple of 2*UNROLL_FACTOR (CSC_global.h) --
+  // no remainder loop needed here either.
   for( row=0; row < (IMAGE_ROW_SIZE >> 1); row++)
-  for( col=0; col < (IMAGE_COL_SIZE >> 1); col++) {
+  for( col=0; col < (IMAGE_COL_SIZE >> 1); col+=UNROLL_FACTOR) {
     //fprintf( f_ID_output_Cb, "%02hhx", Cb[row][col]);
-    fputc( Cb[row][col], f_ID_output_Cb);
     //fprintf( f_ID_output_Cr, "%02hhx", Cr[row][col]);
-    fputc( Cr[row][col], f_ID_output_Cr);
+    fputc( Cb[row][col+0], f_ID_output_Cb);
+    fputc( Cr[row][col+0], f_ID_output_Cr);
+    fputc( Cb[row][col+1], f_ID_output_Cb);
+    fputc( Cr[row][col+1], f_ID_output_Cr);
+    fputc( Cb[row][col+2], f_ID_output_Cb);
+    fputc( Cr[row][col+2], f_ID_output_Cr);
+    fputc( Cb[row][col+3], f_ID_output_Cb);
+    fputc( Cr[row][col+3], f_ID_output_Cr);
   }
 
   fclose( f_ID_output_Cr);
@@ -121,10 +157,22 @@ int main( void) {
   }
 
   for( row=0; row < IMAGE_ROW_SIZE; row++)
-  for( col=0; col < IMAGE_COL_SIZE; col++) {
-    fputc( R[row][col], f_ID_output_RGB);
-    fputc( G[row][col], f_ID_output_RGB);
-    fputc( B[row][col], f_ID_output_RGB);
+  for( col=0; col < IMAGE_COL_SIZE; col+=UNROLL_FACTOR) {
+    fputc( R[row][col+0], f_ID_output_RGB);
+    fputc( G[row][col+0], f_ID_output_RGB);
+    fputc( B[row][col+0], f_ID_output_RGB);
+
+    fputc( R[row][col+1], f_ID_output_RGB);
+    fputc( G[row][col+1], f_ID_output_RGB);
+    fputc( B[row][col+1], f_ID_output_RGB);
+
+    fputc( R[row][col+2], f_ID_output_RGB);
+    fputc( G[row][col+2], f_ID_output_RGB);
+    fputc( B[row][col+2], f_ID_output_RGB);
+
+    fputc( R[row][col+3], f_ID_output_RGB);
+    fputc( G[row][col+3], f_ID_output_RGB);
+    fputc( B[row][col+3], f_ID_output_RGB);
   }
   fclose( f_ID_output_RGB);
 
