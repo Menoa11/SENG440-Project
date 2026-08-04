@@ -128,9 +128,11 @@ static void CSC_YCC_to_RGB_brute_force_float( int row, int col,
 #if YCC_to_RGB_ROUTINE == 2
 // =======
 static inline uint8_t saturation_int( int argument) {
-  // Branchless clamp to [0, 255]. Not called from the NEON path below
-  // (that path never clamped -- see neon_finish()'s note); kept here
-  // unused, same as it was before vectorization.
+  // Branchless clamp to [0, 255]. Called from
+  // CSC_YCC_to_RGB_brute_force_int() below to finish the saturation
+  // that neon_finish()'s vqrshrun_n_s32 starts (that instruction only
+  // saturates to the unsigned 16-bit boundary; this closes the gap
+  // down to 8-bit pixel range).
   argument = (argument > 255) ? 255 : argument;
   argument = (argument < 0)   ? 0   : argument;
   return( (uint8_t)argument);
@@ -147,12 +149,16 @@ static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlsl_n_s16( acc, v, coeff));
 } // END of neon_mls()
 
-// Rounding-shift-right by K folded with a plain truncating narrow --
-// vrshrn_n_s32 does the "+= ROUND_K; >>= K" rounding step and the
-// narrow to 16-bit in one instruction. Not saturating, same as the
-// (uint8_t) cast this routine has always used (no clamp).
-static inline int16x4_t neon_finish( int32x4_t acc) {
-  return( vrshrn_n_s32( acc, K));
+// Rounding-shift-right by K folded with a saturating narrow --
+// vqrshrun_n_s32 does the "+= ROUND_K; >>= K" rounding step, then
+// saturates negative results to 0 (signed -> unsigned) and clamps the
+// positive side to the unsigned 16-bit boundary, narrowing to 16-bit
+// in one instruction. Values that still exceed 255 after this are
+// caught by saturation_int() at the scalar store in
+// CSC_YCC_to_RGB_brute_force_int() below, giving a full [0,255] clamp
+// overall -- matching what saturation_float() does for ROUTINE == 1.
+static inline uint16x4_t neon_finish( int32x4_t acc) {
+  return( vqrshrun_n_s32( acc, K));
 } // END of neon_finish()
 
 // =======
@@ -185,30 +191,30 @@ static void CSC_YCC_to_RGB_brute_force_int( int row, int col,
   // terms used.
   int32x4_t luma = vmull_n_s16( y_pixel, D1);
 
-  int16x4_t R_pixel = neon_finish( neon_mac( luma, cr_pixel, D2));
-  int16x4_t G_pixel = neon_finish( neon_mls( neon_mls( luma, cr_pixel, D3),
-                                              cb_pixel, D4));
-  int16x4_t B_pixel = neon_finish( neon_mac( luma, cb_pixel, D5));
+  uint16x4_t R_pixel = neon_finish( neon_mac( luma, cr_pixel, D2));
+  uint16x4_t G_pixel = neon_finish( neon_mls( neon_mls( luma, cr_pixel, D3),
+                                               cb_pixel, D4));
+  uint16x4_t B_pixel = neon_finish( neon_mac( luma, cb_pixel, D5));
 
-  int16_t R_out[4], G_out[4], B_out[4];
-  vst1_s16( R_out, R_pixel);
-  vst1_s16( G_out, G_pixel);
-  vst1_s16( B_out, B_pixel);
+  uint16_t R_out[4], G_out[4], B_out[4];
+  vst1_u16( R_out, R_pixel);
+  vst1_u16( G_out, G_pixel);
+  vst1_u16( B_out, B_pixel);
 
-  R[row+0][col+0] = (uint8_t)R_out[0];
-  R[row+0][col+1] = (uint8_t)R_out[1];
-  R[row+1][col+0] = (uint8_t)R_out[2];
-  R[row+1][col+1] = (uint8_t)R_out[3];
+  R[row+0][col+0] = saturation_int( R_out[0]);
+  R[row+0][col+1] = saturation_int( R_out[1]);
+  R[row+1][col+0] = saturation_int( R_out[2]);
+  R[row+1][col+1] = saturation_int( R_out[3]);
 
-  G[row+0][col+0] = (uint8_t)G_out[0];
-  G[row+0][col+1] = (uint8_t)G_out[1];
-  G[row+1][col+0] = (uint8_t)G_out[2];
-  G[row+1][col+1] = (uint8_t)G_out[3];
+  G[row+0][col+0] = saturation_int( G_out[0]);
+  G[row+0][col+1] = saturation_int( G_out[1]);
+  G[row+1][col+0] = saturation_int( G_out[2]);
+  G[row+1][col+1] = saturation_int( G_out[3]);
 
-  B[row+0][col+0] = (uint8_t)B_out[0];
-  B[row+0][col+1] = (uint8_t)B_out[1];
-  B[row+1][col+0] = (uint8_t)B_out[2];
-  B[row+1][col+1] = (uint8_t)B_out[3];
+  B[row+0][col+0] = saturation_int( B_out[0]);
+  B[row+0][col+1] = saturation_int( B_out[1]);
+  B[row+1][col+0] = saturation_int( B_out[2]);
+  B[row+1][col+1] = saturation_int( B_out[3]);
 
 } // END of CSC_YCC_to_RGB_brute_force_int()
 #endif // YCC_to_RGB_ROUTINE == 2
