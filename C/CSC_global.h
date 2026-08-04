@@ -3,6 +3,12 @@
 #define K 8 // bitwidth
 #define UNITY (1 << K)
 
+// YCC->RGB-specific shift: D1-D5 (below) are quantized at scale 2^K/4.0 =
+// 2^6, not 2^8, so the largest coefficient (2.018 -> D5=129) still fits in
+// an 8-bit unsigned representation. Only CSC_YCC_to_RGB_brute_force_int()
+// (CSC_YCC_to_RGB_01.c) uses this; RGB->YCC keeps the global K=8.
+#define K_YCC_TO_RGB 6
+
 // Named constants for fixed-point arithmetic (Q8 format).
 // Used across CSC_RGB_to_YCC and CSC_YCC_to_RGB to replace
 // repeated expressions with a single named token — clearer intent,

@@ -149,16 +149,18 @@ static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlsl_n_s16( acc, v, coeff));
 } // END of neon_mls()
 
-// Rounding-shift-right by K folded with a saturating narrow --
-// vqrshrun_n_s32 does the "+= ROUND_K; >>= K" rounding step, then
-// saturates negative results to 0 (signed -> unsigned) and clamps the
+// Rounding-shift-right by K_YCC_TO_RGB folded with a saturating narrow --
+// vqrshrun_n_s32 does the "+= ROUND_K; >>= K_YCC_TO_RGB" rounding step,
+// then saturates negative results to 0 (signed -> unsigned) and clamps the
 // positive side to the unsigned 16-bit boundary, narrowing to 16-bit
 // in one instruction. Values that still exceed 255 after this are
 // caught by saturation_int() at the scalar store in
 // CSC_YCC_to_RGB_brute_force_int() below, giving a full [0,255] clamp
 // overall -- matching what saturation_float() does for ROUTINE == 1.
+// D1-D5 are quantized at 2^K_YCC_TO_RGB, not the global 2^K -- see
+// CSC_global.h.
 static inline uint16x4_t neon_finish( int32x4_t acc) {
-  return( vqrshrun_n_s32( acc, K));
+  return( vqrshrun_n_s32( acc, K_YCC_TO_RGB));
 } // END of neon_finish()
 
 // =======
