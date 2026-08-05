@@ -23,6 +23,12 @@ static void CSC_RGB_to_YCC_brute_force_float( unsigned int row, unsigned int col
 #elif RGB_to_YCC_ROUTINE == 2
 // =======
 static void CSC_RGB_to_YCC_brute_force_int( unsigned int row, unsigned int col);
+#elif RGB_to_YCC_ROUTINE == 3
+// =======
+static void CSC_RGB_to_YCC_scalar_int( unsigned int row, unsigned int col);
+#elif RGB_to_YCC_ROUTINE == 4
+// =======
+static void CSC_RGB_to_YCC_custom_asm( unsigned int row, unsigned int col);
 #endif
 
 // =======
@@ -174,6 +180,145 @@ static void CSC_RGB_to_YCC_brute_force_int( unsigned int row, unsigned int col) 
 } // END of CSC_RGB_to_YCC_brute_force_int()
 #endif // RGB_to_YCC_ROUTINE == 2
 
+#if RGB_to_YCC_ROUTINE == 3
+// =======
+// SCALAR baseline for the custom-instruction comparison.
+// Pure integer, no NEON. Matches the textbook implementation described
+// in Lesson 103 slide 22. Each pixel is one MAC chain per output.
+// This is the "before" version -- profile it, count its instructions,
+// then compare against routine 4 which replaces the MAC chain with the
+// custom CSC_Y / CSC_CB / CSC_CR instructions.
+
+static inline uint8_t csc_y_scalar( uint8_t r, uint8_t g, uint8_t b) {
+  int acc = BIAS_LUMA
+          + C11 * (int)r
+          + C12 * (int)g
+          + C13 * (int)b;
+  return (uint8_t)((acc + ROUND_K) >> K);
+} // END of csc_y_scalar()
+
+static inline uint8_t csc_cb_scalar( uint8_t r, uint8_t g, uint8_t b) {
+  int acc = BIAS_CHROMA
+          - C21 * (int)r
+          - C22 * (int)g
+          + C23 * (int)b;
+  return (uint8_t)((acc + ROUND_K) >> K);
+} // END of csc_cb_scalar()
+
+static inline uint8_t csc_cr_scalar( uint8_t r, uint8_t g, uint8_t b) {
+  int acc = BIAS_CHROMA
+          + C31 * (int)r
+          - C32 * (int)g
+          - C33 * (int)b;
+  return (uint8_t)((acc + ROUND_K) >> K);
+} // END of csc_cr_scalar()
+
+static void CSC_RGB_to_YCC_scalar_int( unsigned int row, unsigned int col) {
+  uint8_t cb00, cb01, cb10, cb11;
+  uint8_t cr00, cr01, cr10, cr11;
+
+  // 4 pixels of the 2x2 block
+  Y [row+0][col+0] = csc_y_scalar ( R[row+0][col+0], G[row+0][col+0], B[row+0][col+0]);
+  Y [row+0][col+1] = csc_y_scalar ( R[row+0][col+1], G[row+0][col+1], B[row+0][col+1]);
+  Y [row+1][col+0] = csc_y_scalar ( R[row+1][col+0], G[row+1][col+0], B[row+1][col+0]);
+  Y [row+1][col+1] = csc_y_scalar ( R[row+1][col+1], G[row+1][col+1], B[row+1][col+1]);
+
+  cb00 = csc_cb_scalar( R[row+0][col+0], G[row+0][col+0], B[row+0][col+0]);
+  cb01 = csc_cb_scalar( R[row+0][col+1], G[row+0][col+1], B[row+0][col+1]);
+  cb10 = csc_cb_scalar( R[row+1][col+0], G[row+1][col+0], B[row+1][col+0]);
+  cb11 = csc_cb_scalar( R[row+1][col+1], G[row+1][col+1], B[row+1][col+1]);
+
+  cr00 = csc_cr_scalar( R[row+0][col+0], G[row+0][col+0], B[row+0][col+0]);
+  cr01 = csc_cr_scalar( R[row+0][col+1], G[row+0][col+1], B[row+0][col+1]);
+  cr10 = csc_cr_scalar( R[row+1][col+0], G[row+1][col+0], B[row+1][col+0]);
+  cr11 = csc_cr_scalar( R[row+1][col+1], G[row+1][col+1], B[row+1][col+1]);
+
+  Cb[row>>1][col>>1] = chrominance_downsample( cb00, cb01, cb10, cb11);
+  Cr[row>>1][col>>1] = chrominance_downsample( cr00, cr01, cr10, cr11);
+} // END of CSC_RGB_to_YCC_scalar_int()
+#endif // RGB_to_YCC_ROUTINE == 3
+
+#if RGB_to_YCC_ROUTINE == 4
+// =======
+// CUSTOM INSTRUCTION version (the "after" for the ASIP comparison).
+// Uses inline assembly to instantiate three theoretical instructions:
+//   CSC_Y  Rd, Rn   -- (BIAS_LUMA   + C11*R + C12*G + C13*B + round) >> K
+//   CSC_CB Rd, Rn   -- (BIAS_CHROMA - C21*R - C22*G + C23*B + round) >> K
+//   CSC_CR Rd, Rn   -- (BIAS_CHROMA + C31*R - C32*G - C33*B + round) >> K
+// Input Rn is a packed 32-bit word: 0x00BBGGRR (R in bits 0-7, G in
+// bits 8-15, B in bits 16-23). Output Rd holds the 8-bit result in
+// its low byte. Coefficients C11..C33, K, ROUND_K, BIAS_LUMA, and
+// BIAS_CHROMA are hardwired inside the computing unit.
+//
+// The assembler does not know these opcodes, so this compiles with
+// `-S` (producing a listing showing CSC_Y / CSC_CB / CSC_CR) but does
+// NOT assemble to an object file. That is per Lesson 100 slide 27 --
+// intended and expected behaviour.
+//
+// To validate correctness of the surrounding code without the
+// custom instruction, define CSC_ASM_EMULATE at compile time and the
+// three inline-asm blocks fall back to the scalar C implementation.
+
+#ifdef CSC_ASM_EMULATE
+  #define CSC_Y_ASM( rgb, out) \
+    do { uint8_t r_ = (rgb)&0xFF, g_ = ((rgb)>>8)&0xFF, b_ = ((rgb)>>16)&0xFF; \
+         int a_ = BIAS_LUMA + C11*(int)r_ + C12*(int)g_ + C13*(int)b_; \
+         (out) = (uint32_t)((uint8_t)((a_ + ROUND_K) >> K)); } while(0)
+  #define CSC_CB_ASM( rgb, out) \
+    do { uint8_t r_ = (rgb)&0xFF, g_ = ((rgb)>>8)&0xFF, b_ = ((rgb)>>16)&0xFF; \
+         int a_ = BIAS_CHROMA - C21*(int)r_ - C22*(int)g_ + C23*(int)b_; \
+         (out) = (uint32_t)((uint8_t)((a_ + ROUND_K) >> K)); } while(0)
+  #define CSC_CR_ASM( rgb, out) \
+    do { uint8_t r_ = (rgb)&0xFF, g_ = ((rgb)>>8)&0xFF, b_ = ((rgb)>>16)&0xFF; \
+         int a_ = BIAS_CHROMA + C31*(int)r_ - C32*(int)g_ - C33*(int)b_; \
+         (out) = (uint32_t)((uint8_t)((a_ + ROUND_K) >> K)); } while(0)
+#else
+  #define CSC_Y_ASM( rgb, out)  __asm__("CSC_Y  %0, %1" : "=r"(out) : "r"(rgb))
+  #define CSC_CB_ASM( rgb, out) __asm__("CSC_CB %0, %1" : "=r"(out) : "r"(rgb))
+  #define CSC_CR_ASM( rgb, out) __asm__("CSC_CR %0, %1" : "=r"(out) : "r"(rgb))
+#endif
+
+// Pack R, G, B into one 32-bit word: 0x00BBGGRR.
+// This is the "packing overhead" required by ARM's 2-in/1-out
+// operand limit (Lesson 103 slide 34).
+static inline uint32_t pack_rgb( uint8_t r, uint8_t g, uint8_t b) {
+  return ((uint32_t)r) | ((uint32_t)g << 8) | ((uint32_t)b << 16);
+} // END of pack_rgb()
+
+static void CSC_RGB_to_YCC_custom_asm( unsigned int row, unsigned int col) {
+  uint32_t rgb, y_out, cb_out, cr_out;
+  uint8_t cb00, cb01, cb10, cb11;
+  uint8_t cr00, cr01, cr10, cr11;
+
+  // Pixel (0,0)
+  rgb = pack_rgb( R[row+0][col+0], G[row+0][col+0], B[row+0][col+0]);
+  CSC_Y_ASM ( rgb, y_out);  Y [row+0][col+0] = (uint8_t)y_out;
+  CSC_CB_ASM( rgb, cb_out); cb00 = (uint8_t)cb_out;
+  CSC_CR_ASM( rgb, cr_out); cr00 = (uint8_t)cr_out;
+
+  // Pixel (0,1)
+  rgb = pack_rgb( R[row+0][col+1], G[row+0][col+1], B[row+0][col+1]);
+  CSC_Y_ASM ( rgb, y_out);  Y [row+0][col+1] = (uint8_t)y_out;
+  CSC_CB_ASM( rgb, cb_out); cb01 = (uint8_t)cb_out;
+  CSC_CR_ASM( rgb, cr_out); cr01 = (uint8_t)cr_out;
+
+  // Pixel (1,0)
+  rgb = pack_rgb( R[row+1][col+0], G[row+1][col+0], B[row+1][col+0]);
+  CSC_Y_ASM ( rgb, y_out);  Y [row+1][col+0] = (uint8_t)y_out;
+  CSC_CB_ASM( rgb, cb_out); cb10 = (uint8_t)cb_out;
+  CSC_CR_ASM( rgb, cr_out); cr10 = (uint8_t)cr_out;
+
+  // Pixel (1,1)
+  rgb = pack_rgb( R[row+1][col+1], G[row+1][col+1], B[row+1][col+1]);
+  CSC_Y_ASM ( rgb, y_out);  Y [row+1][col+1] = (uint8_t)y_out;
+  CSC_CB_ASM( rgb, cb_out); cb11 = (uint8_t)cb_out;
+  CSC_CR_ASM( rgb, cr_out); cr11 = (uint8_t)cr_out;
+
+  Cb[row>>1][col>>1] = chrominance_downsample( cb00, cb01, cb10, cb11);
+  Cr[row>>1][col>>1] = chrominance_downsample( cr00, cr01, cr10, cr11);
+} // END of CSC_RGB_to_YCC_custom_asm()
+#endif // RGB_to_YCC_ROUTINE == 4
+
 // =======
 static inline uint8_t chrominance_downsample(
     uint8_t C_pixel_00, uint8_t C_pixel_01,
@@ -223,6 +368,16 @@ void CSC_RGB_to_YCC( void) {
       CSC_RGB_to_YCC_brute_force_int( row, col+2);
       CSC_RGB_to_YCC_brute_force_int( row, col+4);
       CSC_RGB_to_YCC_brute_force_int( row, col+6);
+#elif RGB_to_YCC_ROUTINE == 3
+      CSC_RGB_to_YCC_scalar_int( row, col+0);
+      CSC_RGB_to_YCC_scalar_int( row, col+2);
+      CSC_RGB_to_YCC_scalar_int( row, col+4);
+      CSC_RGB_to_YCC_scalar_int( row, col+6);
+#elif RGB_to_YCC_ROUTINE == 4
+      CSC_RGB_to_YCC_custom_asm( row, col+0);
+      CSC_RGB_to_YCC_custom_asm( row, col+2);
+      CSC_RGB_to_YCC_custom_asm( row, col+4);
+      CSC_RGB_to_YCC_custom_asm( row, col+6);
 #endif
     }
   }

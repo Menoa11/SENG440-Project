@@ -91,7 +91,13 @@ int main( void) {
   fclose( f_ID_echo_R);
   fclose( f_ID_input_RGB);
 
-  CSC_RGB_to_YCC();
+  // Repeat the conversion so the CSC math dominates over file I/O
+  // when profiling with callgrind. Adjust PROFILE_ITERATIONS as needed.
+  #define PROFILE_ITERATIONS 50
+  for( int iter = 0; iter < PROFILE_ITERATIONS; iter++) {
+    CSC_RGB_to_YCC();
+    CSC_YCC_to_RGB();
+  }
 
   //f_ID_output_Y = fopen( "./image_output_Y_64_48_03.data", "wb");
   f_ID_output_Y = fopen( "./image_output_Y_640_480_02.data", "wb");
@@ -147,8 +153,6 @@ int main( void) {
   fclose( f_ID_output_Cb);
   fclose( f_ID_output_Y);
 
-  CSC_YCC_to_RGB();
-
   //f_ID_output_RGB = fopen( "./image_output_RGB_64_48_03.data", "wb");
   f_ID_output_RGB = fopen( "./image_output_RGB_640_480_02.data", "wb");
   if( f_ID_output_RGB == NULL) {
@@ -177,4 +181,3 @@ int main( void) {
   fclose( f_ID_output_RGB);
 
 } // END of main()
-
