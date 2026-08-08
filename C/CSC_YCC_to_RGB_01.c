@@ -141,11 +141,11 @@ static inline uint8_t saturation_int( int argument) {
 // NEON helpers for CSC_YCC_to_RGB_brute_force_int() below. Each takes
 // and returns a single named vector value (never an array of vector
 // types looped over), so GCC keeps every intermediate in a register.
-static inline int32x4_t neon_mac( int32x4_t acc, int16x4_t v, int16_t coeff) {
+static inline __attribute__((always_inline)) int32x4_t neon_mac( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlal_n_s16( acc, v, coeff));
 } // END of neon_mac()
 
-static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
+static inline __attribute__((always_inline)) int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlsl_n_s16( acc, v, coeff));
 } // END of neon_mls()
 
@@ -159,7 +159,7 @@ static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
 // overall -- matching what saturation_float() does for ROUTINE == 1.
 // D1-D5 are quantized at 2^K_YCC_TO_RGB, not the global 2^K -- see
 // CSC_global.h.
-static inline uint16x4_t neon_finish( int32x4_t acc) {
+static inline __attribute__((always_inline)) uint16x4_t neon_finish( int32x4_t acc) {
   return( vqrshrun_n_s32( acc, K_YCC_TO_RGB));
 } // END of neon_finish()
 

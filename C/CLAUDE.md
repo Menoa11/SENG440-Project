@@ -70,7 +70,7 @@ vectorization).
 
 - AArch64: `aarch64-linux-gnu-gcc`
 - ARMv5: `arm-linux-gnueabihf-gcc -static -march=armv5`
-- Common flags: `-O1`, `-Os`, `-S`, `-Wall`, `-Wextra`, `-g`, `-marm`, `-mthumb`
+- Common flags: `-O0`, `-Os`, `-S`, `-Wall`, `-Wextra`, `-g`, `-marm`, `-mthumb`
 - Profiling: Valgrind / callgrind
 - NEON intrinsics: use **C intrinsic names**, never raw assembly mnemonics, e.g.
   `vqmovun_s16` (signed→unsigned narrowing, correct for signed intermediate

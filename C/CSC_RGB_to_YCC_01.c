@@ -97,11 +97,11 @@ static void CSC_RGB_to_YCC_brute_force_float( unsigned int row, unsigned int col
 // and returns a single named vector value (never an array of vector
 // types looped over), so GCC keeps every intermediate in a register
 // -- same convention as the YCC_to_RGB NEON helpers.
-static inline int32x4_t neon_mac( int32x4_t acc, int16x4_t v, int16_t coeff) {
+static inline __attribute__((always_inline)) int32x4_t neon_mac( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlal_n_s16( acc, v, coeff));
 } // END of neon_mac()
 
-static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
+static inline __attribute__((always_inline)) int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
   return( vmlsl_n_s16( acc, v, coeff));
 } // END of neon_mls()
 
@@ -109,7 +109,7 @@ static inline int32x4_t neon_mls( int32x4_t acc, int16x4_t v, int16_t coeff) {
 // vrshrn_n_s32 does the "+= ROUND_K; >>= K" rounding step and the
 // narrow to 16-bit in one instruction. Not saturating, matching the
 // (uint8_t) cast this routine has always used (no clamp).
-static inline int16x4_t neon_finish( int32x4_t acc) {
+static inline __attribute__((always_inline)) int16x4_t neon_finish( int32x4_t acc) {
   return( vrshrn_n_s32( acc, K));
 } // END of neon_finish()
 
